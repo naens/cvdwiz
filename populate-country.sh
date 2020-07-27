@@ -1,4 +1,4 @@
-#!/bin/dash
+#! /bin/dash
 
 sqlfile=cvd.sql
 
@@ -15,7 +15,7 @@ echo "$values" | tr '#' \" | while IFS= read -r line; do
     if [ -n "$line" ]
     then
         sql="insert or replace into \
-            country (key,name,continent,population)
+            country (key,name,continent,population) \
             values ($line)"
         echo $sql | sqlite3 $sqlfile
     fi
