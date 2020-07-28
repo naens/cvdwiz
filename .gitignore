@@ -1,2 +1,3 @@
 tmp/
-cvd.sql
+*.db
+cvd-data.*
