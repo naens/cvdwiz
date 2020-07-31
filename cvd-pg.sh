@@ -3,7 +3,6 @@
 web_source="https://covid.ourworldindata.org/data/owid-covid-data.json"
 dir=$(cd `dirname $0` && pwd)
 data_file="$dir/tmp/covid-data.json"
-echo data_file=$data_file
 pg_user=pgwiz
 pg_db=cvd19
 
