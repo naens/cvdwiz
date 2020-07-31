@@ -1,7 +1,9 @@
 #! /bin/dash
 
 web_source="https://covid.ourworldindata.org/data/owid-covid-data.json"
-data_file=tmp/covid-data.json
+dir=$(cd `dirname $0` && pwd)
+data_file="$dir/tmp/covid-data.json"
+echo data_file=$data_file
 pg_user=pgwiz
 pg_db=cvd19
 
@@ -192,6 +194,7 @@ cvd_renew ()
     echo "update $date_from $date_to done"
     cvd_log
 }
+
 
 # commands are init, get, update, sql
 cmd=$1
