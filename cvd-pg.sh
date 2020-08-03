@@ -145,10 +145,10 @@ cvd_upd ()
     echo "$values" | while IFS= read -r line; do
         if [ -n "$line" ]
         then
-            local sql="insert into data (day, country, new_cases_eu)
+            local sql="insert into data (day, country, new_cases)
                 values ($line)
                 on conflict (day, country) do update set
-                new_cases=EXCLUDED.new_cases_eu;"
+                new_cases=EXCLUDED.new_cases;"
             echo "$sql" >> "$temp"
         fi
     done
@@ -197,7 +197,7 @@ cvd_upd2 ()
             local sql="insert into data (day, country, new_cases_eu)
                 values ($line)
                 on conflict (day, country) do update set
-                new_cases=EXCLUDED.new_cases;"
+                new_cases=EXCLUDED.new_cases_eu;"
             echo "$sql" >> "$temp"
             psql -q -U $pg_user -d $pg_db -c "$sql"
 
