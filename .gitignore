@@ -1,3 +1,4 @@
 tmp/
+data/
 *.db
 cvd-data.*
