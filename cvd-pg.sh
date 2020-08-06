@@ -1,14 +1,7 @@
 #! /bin/dash
 
-web_source="https://covid.ourworldindata.org/data/owid-covid-data.json"
-#web_source2="https://opendata.ecdc.europa.eu/covid19/casedistribution/json/"
-dir=$(cd `dirname $0` && pwd)
-data_dir="$dir/data"
-data_file="$data_dir/covid-data-ourworld.json"
-#data_file2="$data_dir/covid-data-europe.json"
 pg_user=pgwiz
 pg_db=cvd19
-
 
 day_start="2019-01-01"
 
@@ -71,37 +64,23 @@ cvd_init ()
     cvd_db_init && cvd_fill_countries
 }
 
-cvd_get ()
+get_new_cases()
 {
     local country=$1
-    local date_from=$2
-    local date_to=$3
-
-    if [ -z "$date_from" -o -z "$country" ]
+    local confirmed=$2
+    local var="confirmed_$country"
+    local old_confirmed=$(eval echo \$$var)
+    if [ -z "$old_confirmed" ]
     then
-        exit
+      old_confirmed=0
     fi
-
-    if [ -z "$date_to" ]
-    then
-        date_to=$date_from
-    fi
-
-    local day_from=$(date_to_day $date_from)
-    local day_to=$(date_to_day $date_to)
-    local sql="select 
-        to_char(TIMESTAMP 'epoch' + (day * 86400 + extract(epoch from timestamp '$day_start')) * INTERVAL '1 second', 'YYYY-MM-DD'),
-        new_cases from data
-        where day >= '$day_from'
-        and day <= '$day_to'
-        and country = (select id from country where name = '$country');"
-    psql -q -U $pg_user -d $pg_db -c "$sql"
+    local new_cases=$(expr $confirmed - $old_confirmed)
+    eval $var=$confirmed
+    echo $new_cases
 }
 
 cvd_upd ()
 {
-    local data=$(cat "$data_file")
-
     local date_from=$1
     local date_to=$2
 
@@ -117,98 +96,20 @@ cvd_upd ()
         date_to=$date_from
     fi
 
-    local day_from=$(date_to_day $date_from)
-    local day_to=$(date_to_day $date_to)
-    
-    jq_args="'to_entries | map(.key as \$key | .value.data \
-        | map(select(.date >= \"$date_from\" and .date <= \"$date_to\") | \
-        {\"key\": \$key, \"day\": .date, \"new_cases\": .new_cases})) \
-        | .[] | .[] | ( \
-        \"(select (extract(epoch from timestamp \$\$\" + .day + \"\$\$) \
-            - extract(epoch from timestamp \$\$$day_start\$\$)) / 86400),\" + \
-        \"(select id from country where key = \$\$\" + .key + \"\$\$),\" + \
-        (.new_cases | tostring))'"
-    values=$(echo "$data" | eval "jq -r $jq_args")
-
-    echo "BEGIN TRANSACTION;" > "$temp"
-    echo "$values" | while IFS= read -r line; do
-        if [ -n "$line" ]
-        then
-            local sql="insert into data (day, country, new_cases)
-                values ($line)
-                on conflict (day, country) do update set
-                new_cases=EXCLUDED.new_cases;"
-            echo "$sql" >> "$temp"
-        fi
-    done
-    echo "COMMIT;" >> "$temp"
-    psql -q -U $pg_user -d $pg_db -f "$temp"
-    rm -rf "$temp"
+    curl "http://127.0.0.1:8080/update?command=update&date_from=$date_from&date_to=$date_to"
 }
 
-cvd_upd2 ()
+cvd_refresh ()
 {
-    local data=$(cat "$data_file2")
-
-    local date_from=$1
-    local date_to=$2
-
-    local temp=$(mktemp)
-
-    if [ -z "$date_from" ]
-    then
-        exit
-    fi
-
-    if [ -z "$date_to" ]
-    then
-        date_to=$date_from
-    fi
-
-    local day_from=$(date_to_day $date_from)
-    local day_to=$(date_to_day $date_to)
-
-    jq_args="'.records | \
-        map( { date: (.year + \"-\" + .month + \"-\" + .day), key: .countryterritoryCode, new_cases: .cases } \
-            | select(.date >= \"$date_from\" and .date <= \"$date_to\")) \
-            | .[] | ( \
-                \"(select (extract(epoch from timestamp \$\$\" + .date + \"\$\$) \
-                    - extract(epoch from timestamp \$\$$day_start\$\$)) / 86400),\" + \
-                \"(select id from country where key = \$\$\" + .key + \"\$\$),\" + \
-                (.new_cases | tostring))'"
-    values=$(echo "$data" | eval "jq -r $jq_args")
-
-    echo temp="$temp"
-    echo "BEGIN TRANSACTION;" > "$temp"
-    echo "$values" | while IFS= read -r line; do
-        if [ -n "$line" ]
-        then
-            local sql="insert into data (day, country, new_cases_eu)
-                values ($line)
-                on conflict (day, country) do update set
-                new_cases=EXCLUDED.new_cases_eu;"
-            echo "$sql" >> "$temp"
-            psql -q -U $pg_user -d $pg_db -c "$sql"
-        fi
-    done
-    echo "COMMIT;" >> "$temp"
-#    psql -q -U $pg_user -d $pg_db -f "$temp"
-#    cat "$temp"
-#    rm -rf "$temp"
+    curl "http://127.0.0.1:8080/update?command=refresh"
 }
+
 
 
 cvd_sql ()
 {
     local sql="$1"
     psql -q -U $pg_user -d $pg_db -c "$sql"
-}
-
-cvd_refresh ()
-{
-    mkdir -p $(dirname "$data_file)")
-    curl -s "$web_source" > "$data_file"
-#    curl -s "$web_source2" > "$data_file2"
 }
 
 cvd_log ()
@@ -231,12 +132,9 @@ cvd_renew ()
         echo "cvd_renew: bad arguments"
         return
     fi
-    local date_to=$(date +%F)
-    local date_from=$(day_to_date $(expr $(date_to_day $date_to) - $days))
     cvd_refresh
     echo "refresh done"
-    cvd_upd $date_from $date_to
-#    cvd_upd2 $date_from $date_to
+    curl "http://127.0.0.1:8080/update?command=update&days=$days"
     echo "update $date_from $date_to done"
     cvd_log
 }
@@ -251,21 +149,16 @@ case $cmd in
     cvd_init $@
     ;;
 
-  get)
-    cvd_get $@
-    ;;
-
-  update) # update the database from file
-    cvd_upd $@
-#    cvd_upd2 $@
-    ;;
-
   sql)
     cvd_sql "$1"
     ;;
 
-  refresh) # refresh data file
-    cvd_refresh $@
+  refresh)
+     cvd_refresh $@
+     ;;
+
+  update)
+    cvd_upd $@
     ;;
 
   renew) # download new data file and insert $1 last days into database
