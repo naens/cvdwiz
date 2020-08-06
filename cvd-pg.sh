@@ -35,10 +35,20 @@ cvd_db_init ()
     local sql="
     CREATE TABLE IF NOT EXISTS country (
         id SERIAL PRIMARY KEY,
-        key TEXT UNIQUE,
-        name TEXT,
         continent TEXT,
         population BIGINT
+    );
+
+    CREATE TABLE IF NOT EXISTS country_code (
+        code TEXT PRIMARY KEY,
+        country INTEGER,
+        FOREIGN KEY (country) REFERENCES country(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS country_name (
+        name TEXT PRIMARY KEY,
+        country INTEGER,
+        FOREIGN KEY (country) REFERENCES country(id)
     );
 
     CREATE TABLE IF NOT EXISTS data (
@@ -53,28 +63,7 @@ cvd_db_init ()
 
 cvd_fill_countries ()
 {
-    local data=$(cat "$data_file")
-
-    jq_args="'to_entries | map( \
-        \"\$\$\" + .key + \"\$\$,\" + \
-        \"\$\$\" + (.value.location | tostring) + \"\$\$,\" + \
-        \"\$\$\" + (.value.continent | tostring) + \"\$\$,\" + \
-        \"\$\$\" + (.value.population | tostring) + \"\$\$\n\") | .[]'"
-    values=$(echo "$data" | eval "jq -r $jq_args")
-
-    echo "$values" | while IFS= read -r line; do
-        if [ -n "$line" ]
-        then
-            sql="insert into \
-                country (key,name,continent,population) \
-                values ($line) \
-                on conflict(key) do update set \
-                    name=EXCLUDED.name, \
-                    continent=EXCLUDED.continent, \
-                    population=EXCLUDED.population;"
-            psql -q -U $pg_user -d $pg_db -c "$sql"
-        fi
-    done
+    psql -q -U $pg_user -d $pg_db -f "$dir/country_insert.sql"
 }
 
 cvd_init ()
@@ -200,7 +189,6 @@ cvd_upd2 ()
                 new_cases=EXCLUDED.new_cases_eu;"
             echo "$sql" >> "$temp"
             psql -q -U $pg_user -d $pg_db -c "$sql"
-
         fi
     done
     echo "COMMIT;" >> "$temp"
