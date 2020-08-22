@@ -1,5 +1,7 @@
 #! /bin/dash
 
+dir=$(pwd)
+
 pg_user=pgwiz
 pg_db=cvd19
 
