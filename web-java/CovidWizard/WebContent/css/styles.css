@@ -1,0 +1,217 @@
+@font-face {
+	font-family: "Lora";
+	src: url("/fonts/Lora-Regular.ttf") format("truetype");
+}
+
+#logo70 {
+	top: 0px;
+	float: left;
+	/* 	position: absolute; */
+}
+
+#text01 {
+	float: right;
+	margin-right: 210px;
+}
+
+#date_from_label {
+	margin-left: 20px;
+}
+
+#faq {
+	max-width: 900px;
+	z-index: 20;
+}
+
+div#faq p {
+	text-align: left;
+}
+
+h1 {
+	top: 0px;
+	/* 	text-align: center; */
+	font-family: 'Lora', serif;
+	font-size: 70px;
+	margin-left: 200px;
+	margin-top: 0px;
+	margin-bottom: 0px;
+	left: 30px;
+	/* 	float: right; */
+	/* 	position: absolute; */
+}
+
+p {
+	margin-bottom: 0.1in;
+	direction: ltr;
+	line-height: 115%;
+	text-align: center;
+	background: transparent;
+	font-size: 25px;
+	font-family: 'Lora', serif;
+}
+
+.center {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	height: auto;
+	width: auto;
+}
+
+.content {
+	max-width: 1200px;
+	margin: auto;
+}
+
+#data_table {
+	max-height: 800px;
+	overflow-y: scroll;
+}
+
+#table_header {
+	float: left;
+	position: relative;
+	top: 0px;
+	margin-left: 50px;
+	overflow: hidden;
+	z-index: 10;
+	width: 100%;
+}
+
+#table_bar {
+	margin-top: 0px;
+	height: 48px;
+}
+
+#population {
+	text-align: left;
+}
+
+#population_field {
+	display: inline;
+}
+
+.tab_hh_normal {
+	color: blue;
+}
+
+.tab_hh_prediction {
+	color: orange;
+}
+
+.tab_ir_normal {
+	color: black;
+}
+
+.tab_ir_prediction {
+	color: purple;
+}
+
+.tab_tr_normal {
+	color: red;
+}
+
+.tab_tr_prediction {
+	color: green;
+}
+
+#country {
+	width: 300px;
+	float: left;
+	margin-right: 40px;
+}
+
+#table_dates {
+	overflow: hidden;
+	padding-top: 10px;
+}
+
+#plot {
+	position: relative;
+	top: 60px;
+	z-index: 3;
+}
+
+.modebar {
+	display: none !important;
+}
+
+.blocker {
+	z-index: 15;
+}
+
+#table_popup {
+	/* 	POPUP WINDOW */
+	top: 60px;
+	position: relative;
+	max-width: 800px;
+	z-index: 20;
+}
+
+#buttons {
+	top: 30px;
+	position: relative;
+	z-index: 10;
+}
+
+#repair_button {
+	float: left;
+	position: relative;
+	left: 42px;
+}
+
+#cases {
+	float: left;
+	position: relative;
+	top: 13px;
+	left: 270px;
+}
+
+#cases_field {
+	display: inline;
+	text-decoration: underline;
+}
+
+#concentration {
+	float: right;
+	position: relative;
+	top: 13px;
+	right: 100px;
+}
+
+#concentration_field {
+	display: inline;
+	text-decoration: underline;
+}
+
+#footer {
+	position: relative;
+	top: 120px;
+	z-index: 8;
+	text-align: center;
+	width: 100%;
+	left: -200px;
+	margin-left: 200px;
+}
+
+#ft_addr {
+	float: left;
+}
+
+#ft_bkg {
+	width: 75%;
+}
+
+#open_table {
+	/* 	LINK */
+	float: right;
+	top: -19px;
+	z-index: 10;
+	position: relative;
+	right: 95px;
+	max-width: 1000px;
+}
+
+td {
+	text-align: right;
+}
