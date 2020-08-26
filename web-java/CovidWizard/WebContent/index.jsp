@@ -57,7 +57,8 @@
 				<img src="images/logo/logo70.png"/>
 			</div>
 			<div id="faq" class="modal"><%=(String)request.getAttribute("FAQ")%></div>
-			<div id="text01"><a href="#faq" rel="modal:open" id="open_faq">FAQ (version 1)</a></div>
+			<div id="login"><a href="/" id="login_a">Login</a></div>
+			<div id="faq01"><a href="#faq" rel="modal:open" id="open_faq">FAQ (version 2)</a></div>
 			<h1>COVID WIZARD</h1>
 			<div id="table_bar">
 				<select id="country" onchange="onCountrySelect()">
@@ -89,24 +90,34 @@
 
 		<div id="table_popup" class="modal">
 			<div id="data_table"></div>
-			<!-- 			<a href="#" rel="modal:close">Close</a> -->
+		</div>
+
+		<div id="density_popup" class="modal">
+			<select id="country_group" onchange="onCountryGroupSelect()">
+				<option value="all" selected="selected">All</option>
+				<c:forEach items="${countryGroups}" var="countryGroup">
+					<option value="${countryGroup.id}">${countryGroup.name}</option>
+				</c:forEach>
+			</select>
+			<script> $('#country_group').val('all'); </script>
+			<div id="density_table"></div>
 		</div>
 
 		<div id="buttons">
 			<input type="hidden" id="repair" name="repair" value="restore"/>
 			<button id="repair_button" type="button" onclick="repairClick()">Repair</button>
-			<div id="cases">Safe #Cases: <div id="cases_field"></div> per Day</div>
-			<div id="concentration">Concentration of HVH: <div id="concentration_field"></div> per 1000</div>
+			<div id="cases">Safe / Last # Cases: <div id="cases_field"></div> / <div id="new_cases_field"></div></div>
+			<div id="density"><a href="#density_popup" rel="modal:open">Transmission Risk</a>: <div id="density_field"></div>&nbsp;(<div id="density_table_field"></div>/<div id="density_total_size"></div>)</div>
 		</div>
 		<div id="footer">
 			<div id="ft_addr">
 				&copy; <a href="https://scholar.google.com/citations?user=DJ8Ep8YAAAAJ&hl=en&oi=ao">Yurii.Nesterov@uclouvain.be</a>
 			</div>
 			<div id="ft_bkg">
-				<a href="https://arxiv.org/abs/2007.11429">Scientific Basis (Model HIT)</a>
+				<a href="https://arxiv.org/abs/2007.11429">Scientific Model (HIT)</a>
 			</div>
 			<div id="open_table">
-				<a href="#table_popup" rel="modal:open">Open Table (from github.com)</a>
+				<a href="#table_popup" rel="modal:open">Data (from github.com)</a>
 			</div>
 		</div>
 	</div>

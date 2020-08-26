@@ -22,11 +22,27 @@ function onCountrySelect() {
 	updateGraphs();
 }
 
+function onCountryGroupSelect() {
+	updateDensityTable();
+}
+
+function updateDensityTable() {
+	// change density fields
+	var country = document.getElementById("country").value;
+	var countryGroup = document.getElementById("country_group").value;
+	$.getJSON(`/density.json?country=${country}&country_group=${countryGroup}`, function(data) {
+		$('#density_table').html(makeTable(data.header, data.rows));
+		$('#density_table_field').html(data.rank);
+		$('#density_total_size').html(data.length);
+	});
+
+}
+
 function round_num(number, digits) {
 	return number.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
 }
-		
-		
+
+
 function updateGraphs() {
 	resetDate();
 	var country = document.getElementById("country").value;
@@ -37,10 +53,11 @@ function updateGraphs() {
 			smoothing: 1.3,
 			width: 3
 		};
-//		alert(data[info].population)
+		//		alert(data[info].population)
 		$('#population_field').html(round_num(data[info].population, 0));
 		$('#cases_field').html(round_num(data[info].hlast / 10, 0));
-		$('#concentration_field').html(round_num(1000 * data[info].hlast / data[info].population, 3));
+		$('#density_field').html(round_num(1000 * data[info].hlast / data[info].population, 3));
+		$('#new_cases_field').html(round_num(data[info].lastCases, 0));
 		pdata = data;
 		lastDate = new Date(pdata[hidden_virus_holders_1].x[pdata[hidden_virus_holders_1].x.length - 1]);
 		data[hidden_virus_holders_index].line = Object.assign({}, data_line);
@@ -222,6 +239,8 @@ function updateGraphs() {
 					//					setDate('#date_to', date_to);
 				}
 			});
+
+		updateDensityTable();
 	});
 }
 
@@ -310,6 +329,38 @@ function resetDate() {
 	$('#date_from').val(getDateString(date_from));
 }
 
+function makeTable(header, rows) {
+	var table = document.createElement('table');
+	var tableBody = document.createElement('tbody');
+
+	table.border = 1;
+
+	var headerRow = document.createElement('tr');
+
+	header.forEach(function(cellData) {
+		var cell = document.createElement('th');
+		cell.appendChild(document.createTextNode(cellData));
+		headerRow.appendChild(cell);
+	});
+
+	tableBody.appendChild(headerRow);
+
+	rows.forEach(function(rowData) {
+		var row = document.createElement('tr');
+
+		rowData.forEach(function(cellData) {
+			var cell = document.createElement('td');
+			cell.appendChild(document.createTextNode(cellData));
+			row.appendChild(cell);
+		});
+
+		tableBody.appendChild(row);
+	});
+
+	table.appendChild(tableBody);
+	return table;
+}
+
 $(document).ready(function() {
 
 	resetDate();
@@ -344,7 +395,7 @@ function repairClick() {
 		$('#repair_button').html('Repair');
 	} else {
 		$('#repair').val('repair');
-		$('#repair_button').html('Resore');
+		$('#repair_button').html('Restore');
 	}
 	updateGraphs();
 }

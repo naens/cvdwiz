@@ -1,5 +1,7 @@
 package com.covidwizard.model;
 
+import com.covidwizard.common.CovidTools;
+
 public class DataItem {
 
 	private int day;
@@ -32,7 +34,8 @@ public class DataItem {
 
 	@Override
 	public String toString() {
-		return "DataItem [day=" + day + ", country=" + country.getName() + ", newCases=" + newCases + "]";
+		return String.format("DataItem [day=%d=%s, country=%s, newCases=%d]",
+				day, CovidTools.dayToDate(day), country.getName(), newCases);
 	}
 
 	public DataItem(int day, Country country, int newCases) {

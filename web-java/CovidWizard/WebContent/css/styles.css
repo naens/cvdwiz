@@ -9,9 +9,14 @@
 	/* 	position: absolute; */
 }
 
-#text01 {
+#login {
 	float: right;
-	margin-right: 210px;
+	margin-right: 120px;
+}
+
+#faq01 {
+	float: right;
+	margin-right: 40px;
 }
 
 #date_from_label {
@@ -164,24 +169,41 @@ p {
 	float: left;
 	position: relative;
 	top: 13px;
-	left: 270px;
+	left: 375px;
 }
 
 #cases_field {
 	display: inline;
-	text-decoration: underline;
+	font-weight: bold;
 }
 
-#concentration {
+#new_cases_field {
+	display: inline;
+}
+
+#density_table {
+	max-height: 800px;
+	overflow-y: scroll;
+}
+
+#density {
 	float: right;
 	position: relative;
 	top: 13px;
 	right: 100px;
 }
 
-#concentration_field {
+#density_field {
 	display: inline;
-	text-decoration: underline;
+	font-weight: bold;
+}
+
+#density_table_field {
+	display: inline;
+}
+
+#density_total_size {
+	display: inline;
 }
 
 #footer {
@@ -190,7 +212,7 @@ p {
 	z-index: 8;
 	text-align: center;
 	width: 100%;
-	left: -200px;
+	left: -250px;
 	margin-left: 200px;
 }
 
@@ -200,15 +222,17 @@ p {
 
 #ft_bkg {
 	width: 75%;
+	position: relative;
+	left: 60px;
 }
 
 #open_table {
 	/* 	LINK */
-	float: right;
+	float: left;
 	top: -19px;
 	z-index: 10;
 	position: relative;
-	right: 95px;
+	left: 775px;
 	max-width: 1000px;
 }
 

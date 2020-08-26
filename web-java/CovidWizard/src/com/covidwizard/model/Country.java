@@ -34,5 +34,34 @@ public class Country {
 	public String toString() {
 		return "Country [id=" + id + ", name=" + name + "]";
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((continent == null) ? 0 : continent.hashCode());
+		result = prime * result + id;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + (int) (population ^ (population >>> 32));
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		Country other = (Country) obj;
+		if (id != other.id) {
+			return false;
+		}
+		return true;
+	}
 	
 }

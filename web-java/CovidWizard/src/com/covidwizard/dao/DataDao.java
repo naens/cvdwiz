@@ -179,4 +179,27 @@ public class DataDao implements Dao<DataItem, DataItemKey> {
 	    return days.get(0);
 	}
 
+	public int getFirstDay(Country country) {
+        String sql = "SELECT MIN(day) as day FROM data WHERE country = ?;";
+        List<Integer> days = new LinkedList<Integer>();
+
+	    connection.ifPresent(conn -> {
+	        try (PreparedStatement statement =
+	                 conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                statement.setInt(1, country.getId());
+
+                ResultSet resultSet = statement.executeQuery();
+
+	            if (resultSet.next()) {
+	            	days.add(resultSet.getInt("day"));
+	            }
+
+	        } catch (SQLException ex) {
+	            LOGGER.log(Level.SEVERE, null, ex);
+	        }
+	    });
+
+	    return days.get(0);
+	}
+
 }

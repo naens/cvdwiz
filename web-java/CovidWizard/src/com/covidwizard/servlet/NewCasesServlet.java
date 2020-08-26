@@ -30,7 +30,6 @@ public class NewCasesServlet extends HttpServlet {
 	private static CountryDao countryDao = new CountryDao();
 	private static DataDao dataDao = new DataDao();
 
-
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {

@@ -17,18 +17,23 @@ import org.bbottema.rtftohtml.RTF2HTMLConverter;
 import org.bbottema.rtftohtml.impl.RTF2HTMLConverterJEditorPane;
 
 import com.covidwizard.dao.CountryDao;
+import com.covidwizard.dao.CountryGroupDao;
 import com.covidwizard.model.Country;
+import com.covidwizard.model.CountryGroup;
 
 @WebServlet("/index")
 public class DynamicsServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static CountryDao countryDao = new CountryDao();
 
+	private static CountryGroupDao countryGroupDao = new CountryGroupDao();
 	private static final String FAQ_RTF_FILE = "/WEB-INF/FAQ.rtf";
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Collection<Country> countries = countryDao.getAllDataLimited();
 		request.setAttribute("countries", countries);
+		Collection<CountryGroup> countryGroups = countryGroupDao.getAll();
+		request.setAttribute("countryGroups", countryGroups);
 		RequestDispatcher dispatcher = request.getRequestDispatcher("index.jsp");
 
 

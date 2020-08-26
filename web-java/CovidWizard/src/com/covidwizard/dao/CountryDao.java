@@ -8,6 +8,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -297,6 +299,31 @@ public class CountryDao implements Dao<Country, Integer> {
 		});
 
 		return countryMap;
+	}
+
+
+
+	public boolean hasData(Country country) {
+        String sql = "SELECT COUNT(*) as count FROM data WHERE country = ?;";
+        List<Boolean> results = new LinkedList<Boolean>();
+
+	    connection.ifPresent(conn -> {
+	        try (PreparedStatement statement =
+	                 conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                statement.setInt(1, country.getId());
+
+                ResultSet resultSet = statement.executeQuery();
+
+	            if (resultSet.next()) {
+	            	results.add(resultSet.getInt("count") > 0);
+	            }
+
+	        } catch (SQLException ex) {
+	            LOGGER.log(Level.SEVERE, null, ex);
+	        }
+	    });
+
+	    return results.isEmpty() ? false : results.get(0);
 	}
 
 }

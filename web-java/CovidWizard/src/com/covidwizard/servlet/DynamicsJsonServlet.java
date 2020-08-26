@@ -3,6 +3,7 @@ package com.covidwizard.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 	class Info {
 		long population;
 		double hlast;
+		int lastCases;
 	}
 
 	@Override
@@ -52,8 +54,8 @@ public class DynamicsJsonServlet extends HttpServlet {
 		response.setCharacterEncoding("UTF-8");
 
 		int countryId = Integer.parseInt(request.getParameter("country"));
-
 		Country country = countryDao.get(countryId).get();
+
 		boolean repair = request.getParameter("repair").equals("repair");
 		List<DataItem> items = dataDao.getDataByCountry(country);
 		int firstDay = items.get(0).getDay();
@@ -102,6 +104,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 		Info info = new Info();
 		info.population = country.getPopulation();
 		info.hlast = covidStat.getHiddenHolders().get(lastDay - 9);
+		info.lastCases = covidStat.getCases().get(Collections.max(covidStat.getCases().keySet()));
 
 		JsonArray jsonArray = new JsonArray();
 		for (ArrayBean ab: result) {
@@ -114,6 +117,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 		String resultJsonString = gson.toJson(jsonArray);
 		out.print(resultJsonString);
 		out.flush();
+		out.close();
 	}
 
 }

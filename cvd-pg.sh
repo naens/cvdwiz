@@ -34,6 +34,18 @@ cvd_db_init ()
         population BIGINT
     );
 
+    CREATE TABLE IF NOT EXISTS country_group (
+        id SERIAL PRIMARY KEY,
+        name TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS country_group_countries (
+        country_group INTEGER,
+        country INTEGER,
+        FOREIGN KEY (country_group) REFERENCES country_group(id),
+        FOREIGN KEY (country) REFERENCES country(id)
+    );
+
     CREATE TABLE IF NOT EXISTS country_code (
         code TEXT PRIMARY KEY,
         country INTEGER,

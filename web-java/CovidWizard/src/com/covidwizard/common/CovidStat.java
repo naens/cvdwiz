@@ -1,15 +1,39 @@
 package com.covidwizard.common;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.covidwizard.dao.CountryDao;
+import com.covidwizard.dao.DataDao;
 import com.covidwizard.model.Country;
+import com.covidwizard.model.DataItem;
 
 public class CovidStat {
 
 	@SuppressWarnings("unused")
 	private static final Logger LOGGER = Logger.getLogger(Country.class.getName());
+
+	private static List<Country> countryList = new LinkedList<Country>();
+	private static Map<Country, Double> densityMap = new HashMap<Country, Double>();
+	private static DataDao dataDao = new DataDao();
+	private static CountryDao countryDao = new CountryDao();
+
+	static {
+		Collection<Country> countries = countryDao.getAll();
+		for (Country country : countries) {
+			countryList.add(country);
+		}
+	}
 
 	private Map<Integer, Integer> cases = null;
 	private Map<Integer, Integer> totalCases = new HashMap<Integer, Integer>();
@@ -77,6 +101,7 @@ public class CovidStat {
 			if (totalCases.containsKey(k + 9) && totalCases.containsKey(k - 1)
 					&& totalCases.get(k + 9) > totalCases.get(k - 1)) {
 				hiddenHolders.put(k, totalCases.get(k + 9) - totalCases.get(k - 1));
+//				LOGGER.log(Level.INFO, String.format("fillHiddenHolders: k=%d: =%d", k, hiddenHolders.get(k)));
 			}
 		}
 	}
@@ -108,7 +133,7 @@ public class CovidStat {
 	private void fillSum() {
 		int sum = 0;
 		for (int k = firstDay; k <= lastDay; ++k) {
-			sum += cases.get(k);
+			sum += cases.getOrDefault(k, 0);
 			this.sum.put(k, sum);
 		}
 	}
@@ -219,6 +244,69 @@ public class CovidStat {
 		return hiddenHolders1;
 	}
 
-	
+	public static void clearDensities() {
+		densityMap.clear();
+	}
+
+	private double getDensity(Country country) {
+		long population = country.getPopulation();
+		int maxDay = Collections.max(getHiddenHolders().keySet());
+//		LOGGER.log(Level.INFO, String.format("getDensity: maxDay=%d", maxDay));
+		double hlast = getHiddenHolders().get(maxDay);
+		return 1000.0 * hlast / population;
+	}
+
+	// calculate the density for the country
+	private static double getCountryDensity(Country country) {
+		int firstDay = dataDao.getFirstDay(country);
+		int lastDay = dataDao.getLastDay(country);
+//		LOGGER.log(Level.INFO, String.format("getCountryDensity: country=%s(%d), firstDay=%d, lastDay=%d", country.getName(), country.getId(), firstDay, lastDay));
+
+		List<DataItem> items = dataDao.getDataByCountry(country);
+		Map<Integer, Integer> cases = new HashMap<Integer, Integer>();
+		for (int i = 0; i < items.size(); ++i) {
+			DataItem item = items.get(i);
+			cases.put(item.getDay(), item.getNewCases());
+		}
+
+		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, false);
+		return covidStat.getDensity(country);
+	}
+
+	public static void refreshDensities() {
+		densityMap.clear();
+		fillDensities();
+	}
+
+	private static void fillDensities() {
+		assert(densityMap.isEmpty());
+		for (Country country : countryList) {
+			if (countryDao.hasData(country)) {
+				densityMap.put(country, getCountryDensity(country));
+			}
+		}
+	}
+
+	public static Map<Country, Double> getDensities() {
+		if (densityMap.isEmpty()) {
+			fillDensities();
+		}
+
+		List<Entry<Country, Double>> list = new ArrayList<>(densityMap.entrySet());
+		list.sort(Entry.comparingByValue(new Comparator<Double>() {
+
+			@Override
+			public int compare(Double o1, Double o2) {
+				return o1 > o2 ? -1 : o1 < o2 ? 1 : 0;
+			}
+		}));
+
+		Map<Country, Double> result = new LinkedHashMap<>();
+		for (Entry<Country, Double> entry : list) {
+			result.put(entry.getKey(), entry.getValue());
+		}
+
+		return result;
+	}
 
 }
