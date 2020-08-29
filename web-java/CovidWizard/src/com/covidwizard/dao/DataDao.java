@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import com.covidwizard.dao.DataDao.DataItemKey;
 import com.covidwizard.model.Country;
+import com.covidwizard.model.CountryGroup;
 import com.covidwizard.model.DataItem;
 
 public class DataDao implements Dao<DataItem, DataItemKey> {
@@ -156,6 +157,63 @@ public class DataDao implements Dao<DataItem, DataItemKey> {
 	    return items;
 	}
 
+	public List<DataItem> getWorldData() {
+		List<DataItem> items = new LinkedList<DataItem>();
+        String sql = "SELECT day, sum(new_cases) as new_cases FROM data GROUP BY day ORDER BY day;";
+
+	    connection.ifPresent(conn -> {
+	        try (PreparedStatement statement =
+	                 conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+                ResultSet resultSet = statement.executeQuery();
+
+	            while (resultSet.next()) {
+	                int day = resultSet.getInt("day");
+	                int newCases = resultSet.getInt("new_cases");
+
+	                DataItem item = new DataItem(day, null, newCases);
+
+	                items.add(item);
+	            }
+
+	        } catch (SQLException ex) {
+	            LOGGER.log(Level.SEVERE, null, ex);
+	        }
+	    });
+
+	    return items;
+	}
+
+	public List<DataItem> getGroupData(CountryGroup countryGroup) {
+		List<DataItem> items = new LinkedList<DataItem>();
+        String sql = "SELECT day, sum(new_cases) as new_cases FROM data "
+        		+ "JOIN country_group_countries on data.country = country_group_countries.country "
+        		+ "WHERE country_group_countries.country_group = ? "
+        		+ "GROUP BY day ORDER BY day;";
+
+	    connection.ifPresent(conn -> {
+	        try (PreparedStatement statement =
+	                 conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+                statement.setInt(1, countryGroup.getId());
+                ResultSet resultSet = statement.executeQuery();
+
+	            while (resultSet.next()) {
+	                int day = resultSet.getInt("day");
+	                int newCases = resultSet.getInt("new_cases");
+
+	                DataItem item = new DataItem(day, null, newCases);
+
+	                items.add(item);
+	            }
+
+	        } catch (SQLException ex) {
+	            LOGGER.log(Level.SEVERE, null, ex);
+	        }
+	    });
+	    return items;
+	}
+
 	public int getLastDay(Country country) {
         String sql = "SELECT MAX(day) as day FROM data WHERE country = ?;";
         List<Integer> days = new LinkedList<Integer>();
@@ -187,6 +245,53 @@ public class DataDao implements Dao<DataItem, DataItemKey> {
 	        try (PreparedStatement statement =
 	                 conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 statement.setInt(1, country.getId());
+
+                ResultSet resultSet = statement.executeQuery();
+
+	            if (resultSet.next()) {
+	            	days.add(resultSet.getInt("day"));
+	            }
+
+	        } catch (SQLException ex) {
+	            LOGGER.log(Level.SEVERE, null, ex);
+	        }
+	    });
+
+	    return days.get(0);
+	}
+
+	public int getGroupLastDay(CountryGroup countryGroup) {
+        String sql = "SELECT MAX(day) as day FROM data JOIN country_group_countries "
+        		+ "ON data.country = country_group_countries.country "
+        		+ "WHERE country_group = ?;";
+        List<Integer> days = new LinkedList<Integer>();
+
+	    connection.ifPresent(conn -> {
+	        try (PreparedStatement statement =
+	                 conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+                statement.setInt(1, countryGroup.getId());
+                ResultSet resultSet = statement.executeQuery();
+
+	            if (resultSet.next()) {
+	            	days.add(resultSet.getInt("day"));
+	            }
+
+	        } catch (SQLException ex) {
+	            LOGGER.log(Level.SEVERE, null, ex);
+	        }
+	    });
+
+	    return days.get(0);
+	}
+
+	public int getWorldLastDay() {
+        String sql = "SELECT MAX(day) as day FROM data;";
+        List<Integer> days = new LinkedList<Integer>();
+
+	    connection.ifPresent(conn -> {
+	        try (PreparedStatement statement =
+	                 conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
                 ResultSet resultSet = statement.executeQuery();
 

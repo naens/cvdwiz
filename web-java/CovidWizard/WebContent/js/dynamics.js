@@ -26,14 +26,68 @@ function onCountryGroupSelect() {
 	updateDensityTable();
 }
 
+function makeDensityTable(header, rows) {
+	var table = document.createElement('table');
+	var tableBody = document.createElement('tbody');
+
+	table.border = 1;
+
+	var headerRow = document.createElement('tr');
+
+	header.forEach(function(cellData) {
+		var cell = document.createElement('th');
+		cell.appendChild(document.createTextNode(cellData));
+		headerRow.appendChild(cell);
+	});
+
+	tableBody.appendChild(headerRow);
+
+	rows.forEach(function(rowData) {
+		var row = document.createElement('tr');
+		// TODO for rowData[2]: green <0.2, yellow <0.4, red <0.8, black otherwise
+
+		var i = 0;
+		rowData.forEach(function(cellData) {
+			var cell = document.createElement('td');
+			var textNode = document.createTextNode(cellData);
+    		var container = document.createElement("span");
+			container.appendChild(textNode);
+			if (i > 0) {
+				if (rowData[2] < 0.2) {
+					container.style.color = "green";
+				} else if (rowData[2] < 0.4) {
+					container.style.color = "orange";
+				} else if (rowData[2] < 0.8) {
+					container.style.color = "red";
+				} else {
+					container.style.color = "black";
+				}
+			}
+			cell.appendChild(container);
+			row.appendChild(cell);
+			++i;
+		});
+
+		tableBody.appendChild(row);
+	});
+
+	table.appendChild(tableBody);
+	return table;
+}
+
 function updateDensityTable() {
 	// change density fields
 	var country = document.getElementById("country").value;
 	var countryGroup = document.getElementById("country_group").value;
 	$.getJSON(`/density.json?country=${country}&country_group=${countryGroup}`, function(data) {
-		$('#density_table').html(makeTable(data.header, data.rows));
-		$('#density_table_field').html(data.rank);
-		$('#density_total_size').html(data.length);
+		$('#density_table').html(makeDensityTable(data.header, data.rows));
+		if (typeof data.rank !== 'undefined') {
+			$('#density_table_field').html(data.rank);
+			$('#density_total_size').html(data.length);
+		} else {
+			$('#density_table_field').html('');
+			$('#density_total_size').html(data.length);
+		}
 	});
 
 }
@@ -327,38 +381,6 @@ function resetDate() {
 	var date_to = new Date();
 	date_to.setDate(date_to.getDate() - 11);
 	$('#date_from').val(getDateString(date_from));
-}
-
-function makeTable(header, rows) {
-	var table = document.createElement('table');
-	var tableBody = document.createElement('tbody');
-
-	table.border = 1;
-
-	var headerRow = document.createElement('tr');
-
-	header.forEach(function(cellData) {
-		var cell = document.createElement('th');
-		cell.appendChild(document.createTextNode(cellData));
-		headerRow.appendChild(cell);
-	});
-
-	tableBody.appendChild(headerRow);
-
-	rows.forEach(function(rowData) {
-		var row = document.createElement('tr');
-
-		rowData.forEach(function(cellData) {
-			var cell = document.createElement('td');
-			cell.appendChild(document.createTextNode(cellData));
-			row.appendChild(cell);
-		});
-
-		tableBody.appendChild(row);
-	});
-
-	table.appendChild(tableBody);
-	return table;
 }
 
 $(document).ready(function() {

@@ -18,8 +18,10 @@ import javax.servlet.http.HttpServletResponse;
 import com.covidwizard.common.CovidStat;
 import com.covidwizard.common.CovidTools;
 import com.covidwizard.dao.CountryDao;
+import com.covidwizard.dao.CountryGroupDao;
 import com.covidwizard.dao.DataDao;
 import com.covidwizard.model.Country;
+import com.covidwizard.model.CountryGroup;
 import com.covidwizard.model.DataItem;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -33,6 +35,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 
 	private static CountryDao countryDao = new CountryDao();
 	private static DataDao dataDao = new DataDao();
+	private static CountryGroupDao countryGroupDao = new CountryGroupDao();
 
 	class ArrayBean {
 		ArrayList<String> x = new ArrayList<String>();
@@ -53,18 +56,38 @@ public class DynamicsJsonServlet extends HttpServlet {
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 
-		int countryId = Integer.parseInt(request.getParameter("country"));
-		Country country = countryDao.get(countryId).get();
-
+		String countryParameter = request.getParameter("country");
 		boolean repair = request.getParameter("repair").equals("repair");
-		List<DataItem> items = dataDao.getDataByCountry(country);
+
+		List<DataItem> items = null;
+		int lastDay = -1;
+		long population = -1;
+		if (CovidTools.isNumeric(countryParameter)) {
+			int countryId = Integer.parseInt(countryParameter);
+			Country country = countryDao.get(countryId).get();
+			items = dataDao.getDataByCountry(country);
+			lastDay = dataDao.getLastDay(country);
+			population = country.getPopulation();
+		} else if (countryParameter.equals("all")) {
+			items = dataDao.getWorldData();
+			lastDay = dataDao.getWorldLastDay();
+			population = countryGroupDao.getWorldPopulation().get();
+		} else if (countryParameter.startsWith("gr")) {
+			int groupId = Integer.parseInt(countryParameter.substring(2));
+			CountryGroup countryGroup = countryGroupDao.get(groupId).get();
+			items = dataDao.getGroupData(countryGroup);
+			lastDay = dataDao.getGroupLastDay(countryGroup);
+			population = countryGroupDao.getGroupPopulation(countryGroup).get();
+		} else {
+			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
+		}
 		int firstDay = items.get(0).getDay();
-		int lastDay = dataDao.getLastDay(country);
 		Map<Integer, Integer> cases = new HashMap<Integer, Integer>();
 		for (int i = 0; i < items.size(); ++i) {
 			DataItem item = items.get(i);
 			cases.put(item.getDay(), item.getNewCases());
 		}
+
 		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair);
 
 		Gson gson = new Gson();
@@ -102,7 +125,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 		}
 
 		Info info = new Info();
-		info.population = country.getPopulation();
+		info.population = population;
 		info.hlast = covidStat.getHiddenHolders().get(lastDay - 9);
 		info.lastCases = covidStat.getCases().get(Collections.max(covidStat.getCases().keySet()));
 

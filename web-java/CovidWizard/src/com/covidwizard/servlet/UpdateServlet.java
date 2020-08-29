@@ -131,7 +131,7 @@ public class UpdateServlet extends HttpServlet {
 						numbers.put(i, numbers.getOrDefault(i, 0) + Integer.parseInt(values[DAYS_POSITION_START + i]));
 					}
 				} else {
-					if (!currentCountry.equals("")) {
+					if (!currentCountry.equals("") && country != null) {
 						saveCountry(country, dayFrom, dayTo, lastDay, days, numbers);
 //						LOGGER.log(Level.INFO, String.format("COUNTRY %s: SAVED (1)", currentCountry));
 					}

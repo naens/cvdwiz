@@ -16,8 +16,10 @@ import javax.servlet.http.HttpServletResponse;
 import com.covidwizard.common.CovidStat;
 import com.covidwizard.common.CovidTools;
 import com.covidwizard.dao.CountryDao;
+import com.covidwizard.dao.CountryGroupDao;
 import com.covidwizard.dao.DataDao;
 import com.covidwizard.model.Country;
+import com.covidwizard.model.CountryGroup;
 import com.covidwizard.model.DataItem;
 
 @WebServlet("/newcases")
@@ -29,20 +31,46 @@ public class NewCasesServlet extends HttpServlet {
 
 	private static CountryDao countryDao = new CountryDao();
 	private static DataDao dataDao = new DataDao();
+	private static CountryGroupDao countryGroupDao = new CountryGroupDao();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		int countryId = Integer.parseInt(request.getParameter("country"));
-		Country country = countryDao.get(countryId).get();
+		String countryParameter = request.getParameter("country");
+
 		boolean repair = request.getParameter("repair").equals("repair");
 		PrintWriter writer = response.getWriter();
 		writer.println("<table border=\"1\">");
 		writer.println("<tbody>");
 		writer.println("<tr><th>Date</th><th>New Cases</th><th>Total Cases</th><th>Hidden Holders</th><th>Infection Rate</th><th>Total Rate (TIR)</th></tr>");
-		List<DataItem> items = dataDao.getDataByCountry(country);
+
+//		List<DataItem> items = dataDao.getDataByCountry(country);
+//		int firstDay = items.get(0).getDay();
+//		int lastDay = dataDao.getLastDay(country);
+//		Map<Integer, Integer> cases = new HashMap<Integer, Integer>();
+//		for (int i = 0; i < items.size(); ++i) {
+//			DataItem item = items.get(i);
+//			cases.put(item.getDay(), item.getNewCases());
+//		}
+		List<DataItem> items = null;
+		int lastDay = -1;
+		if (CovidTools.isNumeric(countryParameter)) {
+			int countryId = Integer.parseInt(countryParameter);
+			Country country = countryDao.get(countryId).get();
+			items = dataDao.getDataByCountry(country);
+			lastDay = dataDao.getLastDay(country);
+		} else if (countryParameter.equals("all")) {
+			items = dataDao.getWorldData();
+			lastDay = dataDao.getWorldLastDay();
+		} else if (countryParameter.startsWith("gr")) {
+			int groupId = Integer.parseInt(countryParameter.substring(2));
+			CountryGroup countryGroup = countryGroupDao.get(groupId).get();
+			items = dataDao.getGroupData(countryGroup);
+			lastDay = dataDao.getGroupLastDay(countryGroup);
+		} else {
+			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
+		}
 		int firstDay = items.get(0).getDay();
-		int lastDay = dataDao.getLastDay(country);
 		Map<Integer, Integer> cases = new HashMap<Integer, Integer>();
 		for (int i = 0; i < items.size(); ++i) {
 			DataItem item = items.get(i);

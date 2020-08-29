@@ -26,6 +26,10 @@
 #faq {
 	max-width: 900px;
 	z-index: 20;
+    height: auto;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 div#faq p {
@@ -135,6 +139,10 @@ p {
 	position: relative;
 	top: 60px;
 	z-index: 3;
+}
+
+.modal a.close-modal {
+	display: none;
 }
 
 .modebar {

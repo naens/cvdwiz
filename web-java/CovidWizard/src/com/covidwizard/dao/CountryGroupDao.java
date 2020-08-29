@@ -36,7 +36,7 @@ public class CountryGroupDao implements Dao<CountryGroup, Integer> {
 			try (PreparedStatement statement = conn.prepareStatement(sql)) {
 
 				statement.setLong(1, countryGroupId);
-                ResultSet resultSet = statement.executeQuery();
+				ResultSet resultSet = statement.executeQuery();
 
 				while (resultSet.next()) {
 					int countryId = resultSet.getInt("id");
@@ -64,7 +64,7 @@ public class CountryGroupDao implements Dao<CountryGroup, Integer> {
 			try (PreparedStatement statement = conn.prepareStatement(sql)) {
 
 				statement.setLong(1, id);
-                ResultSet resultSet = statement.executeQuery();
+				ResultSet resultSet = statement.executeQuery();
 
 				if (resultSet.next()) {
 					String name = resultSet.getString("name");
@@ -114,13 +114,60 @@ public class CountryGroupDao implements Dao<CountryGroup, Integer> {
 	@Override
 	public void update(CountryGroup countryGroup) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void delete(CountryGroup countryGroup) {
 		// TODO Auto-generated method stub
-		
+
+	}
+
+	public Optional<Long> getGroupPopulation(CountryGroup countryGroup) {
+		return connection.flatMap(conn -> {
+			String sql = "SELECT SUM(population) FROM country "
+					+ "JOIN country_group_countries ON country.id = country_group_countries.country "
+					+ "WHERE country_group_countries.country_group = ?;";
+			Optional<Long> groupPopulation = Optional.empty();
+
+			try (PreparedStatement statement = conn.prepareStatement(sql)) {
+
+				statement.setLong(1, countryGroup.getId());
+				ResultSet resultSet = statement.executeQuery();
+
+				if (resultSet.next()) {
+					String sum = resultSet.getString("sum");
+					groupPopulation = Optional.of(Long.parseLong(sum));
+				}
+
+			} catch (SQLException ex) {
+				LOGGER.log(Level.SEVERE, null, ex);
+			}
+
+			return groupPopulation;
+		});
+	}
+
+	public Optional<Long> getWorldPopulation() {
+		return connection.flatMap(conn -> {
+			String sql = "SELECT SUM(population) FROM country;";
+			Optional<Long> worldPopulation = Optional.empty();
+
+			try (PreparedStatement statement = conn.prepareStatement(sql)) {
+
+				ResultSet resultSet = statement.executeQuery();
+
+				if (resultSet.next()) {
+					String sum = resultSet.getString("sum");
+					worldPopulation = Optional.of(Long.parseLong(sum));
+				}
+
+			} catch (SQLException ex) {
+				LOGGER.log(Level.SEVERE, null, ex);
+			}
+
+			return worldPopulation;
+		});
 	}
 
 }

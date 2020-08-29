@@ -65,6 +65,11 @@
 					<c:forEach items="${countries}" var="country">
 						<option value="${country.id}">${country.name}</option>
 					</c:forEach>
+    				<option disabled>----------</option>
+					<option value="all" selected="selected">All</option>
+					<c:forEach items="${countryGroups}" var="countryGroup">
+						<option value="gr${countryGroup.id}">${countryGroup.name}</option>
+					</c:forEach>
 				</select>
 				<div id="table_dates">
 					<label>Dates: From</label>

@@ -34,10 +34,16 @@ public class DataItem {
 
 	@Override
 	public String toString() {
-		return String.format("DataItem [day=%d=%s, country=%s, newCases=%d]",
-				day, CovidTools.dayToDate(day), country.getName(), newCases);
+		if (country == null) {
+			return String.format("DataItem [day=%d=%s, country=NULL, newCases=%d]",
+					day, CovidTools.dayToDate(day), newCases);
+		} else {
+			return String.format("DataItem [day=%d=%s, country=%s, newCases=%d]",
+					day, CovidTools.dayToDate(day), country.getName(), newCases);
+		}
 	}
 
+	// country can be null if group or world
 	public DataItem(int day, Country country, int newCases) {
 		super();
 		this.day = day;

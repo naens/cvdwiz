@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -18,7 +17,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.covidwizard.common.CovidStat;
 import com.covidwizard.common.CovidTools;
-import com.covidwizard.dao.CountryDao;
 import com.covidwizard.dao.CountryGroupDao;
 import com.covidwizard.model.Country;
 import com.google.gson.Gson;
@@ -29,13 +27,13 @@ public class DensityServlet extends HttpServlet {
 	private static final long serialVersionUID = 364554604663779284L;
 	@SuppressWarnings("unused")
 	private static final Logger LOGGER = Logger.getLogger(Country.class.getName());
-	private static CountryDao countryDao = new CountryDao();
+//	private static CountryDao countryDao = new CountryDao();
 	private static CountryGroupDao countryGroupDao = new CountryGroupDao();
 
 	class Data {
 		ArrayList<String> header = new ArrayList<String>();
 		ArrayList<ArrayList<String>> rows = new ArrayList<ArrayList<String>>();
-		int rank;
+		Integer rank;
 		int length;
 	}
 
@@ -43,8 +41,12 @@ public class DensityServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
-		int countryId = Integer.parseInt(request.getParameter("country"));
-		Country country = countryDao.get(countryId).get();
+		Integer countryId = null;
+		String countryParameter = request.getParameter("country");
+		if (CovidTools.isNumeric(countryParameter)) {
+			countryId = Integer.parseInt(countryParameter);
+		}
+//		Country country = countryDao.get(countryId).get();
 		String countryGroupString = request.getParameter("country_group");
 		Set<Country> countryGroupSet = null;
 //		LOGGER.log(Level.INFO, String.format("DENSITY_SERVLET: countryGroupString: %s", countryGroupString));
@@ -56,7 +58,7 @@ public class DensityServlet extends HttpServlet {
 		}
 
 		Map<Country, Double> densities = CovidStat.getDensities();
-		
+
 		PrintWriter writer = response.getWriter();
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
@@ -65,7 +67,8 @@ public class DensityServlet extends HttpServlet {
 		data.header = new ArrayList<String>(Arrays.asList("#", "Country", "Transmission Risk"));
 		data.rows = new ArrayList<ArrayList<String>>();
 		data.length = densities.size();
-		
+		data.rank = null;
+
 		int i = 1;
 		for (Entry<Country, Double> entry : densities.entrySet()) {
 			String number = Integer.toString(i);
@@ -75,7 +78,7 @@ public class DensityServlet extends HttpServlet {
 //				LOGGER.log(Level.INFO, String.format("DENSITY_SERVLET: adding country: %s", entry.getKey().getName()));
 				data.rows.add(new ArrayList<String>(Arrays.asList(number, countryName, density)));
 			}
-			if (entry.getKey().getId() == countryId) {
+			if (countryId != null && entry.getKey().getId() == countryId) {
 				data.rank = i;
 			}
 			++i;
