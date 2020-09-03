@@ -52,18 +52,15 @@ public class CovidStat {
 		this.cases = cases;
 		this.firstDay = firstDay;
 		this.lastDay = lastDay;
-		if (repair) {
-			repair();
-		}
-		fillArrays();
+		fillArrays(repair);
 	}
 
 	private void fixNegative() {
 		double s = 0;
-		Map<Integer, Double> casesOld = new HashMap<Integer, Double>();
-		for (Entry<Integer, Double> entry : cases.entrySet()) {
-			casesOld.put(entry.getKey(), entry.getValue());
-		}
+//		Map<Integer, Double> casesOld = new HashMap<Integer, Double>();
+//		for (Entry<Integer, Double> entry : cases.entrySet()) {
+//			casesOld.put(entry.getKey(), entry.getValue());
+//		}
 		for (int k = firstDay; k <= lastDay; ++k) {
 			double s1 = s + cases.getOrDefault(k, 0.0);
 			if (cases.getOrDefault(k, 0.0) < 0.0) {
@@ -86,6 +83,10 @@ public class CovidStat {
 	private void repair() {
 		final double drop = 3.0;
 		double alevel = 0;
+//		Map<Integer, Double> casesOld = new HashMap<Integer, Double>();
+//		for (Entry<Integer, Double> entry : cases.entrySet()) {
+//			casesOld.put(entry.getKey(), entry.getValue());
+//		}
 		for (int k = firstDay; k <= lastDay; ++k) {
 			int k2 = k;
 			int s = 0;
@@ -107,6 +108,12 @@ public class CovidStat {
 			}
 			alevel = cases.getOrDefault(k2, 0.0) / drop;
 		}
+//		for (int k = firstDay; k <= lastDay; ++k) {
+////			if (Math.abs(casesOld.getOrDefault(k, 0.0) - cases.getOrDefault(k, 0.0)) > 0.0001) {
+//				LOGGER.log(Level.INFO, String.format("repair: k=%d %2f -> %2f", k, casesOld.getOrDefault(k, 0.0),
+//						cases.getOrDefault(k, 0.0)));
+////			}
+//		}
 	}
 
 	private void fillTotalCases() {
@@ -227,8 +234,11 @@ public class CovidStat {
 
 	}
 
-	private void fillArrays() {
+	private void fillArrays(boolean repair) {
 		fixNegative();
+		if (repair) {
+			repair();
+		}
 		fillTotalCases();
 		fillHiddenHolders();
 		fillInfectionRate();
