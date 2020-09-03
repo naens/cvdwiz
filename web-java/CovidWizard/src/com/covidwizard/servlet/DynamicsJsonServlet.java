@@ -47,6 +47,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 		long population;
 		double hlast;
 		Double lastCases;
+		int zeroCases;
 	}
 
 	@Override
@@ -131,6 +132,16 @@ public class DynamicsJsonServlet extends HttpServlet {
 //		info.hlast = covidStat.getHiddenHolders().get(Collections.max(covidStat.getHiddenHolders().keySet()));
 		info.hlast = covidStat.getHiddenHolders().get(lastDay - 9);
 		info.lastCases = covidStat.getCases().get(Collections.max(covidStat.getCases().keySet()));
+
+		info.zeroCases = 0;
+		boolean hasNoZero = false;
+		for (int k = lastDay; k >= firstDay && !hasNoZero; --k) {
+			if (covidStat.getCases().get(k) > 0.0001) {
+				hasNoZero = true;
+			} else {
+				info.zeroCases++;
+			}
+		}
 
 		JsonArray jsonArray = new JsonArray();
 		for (ArrayBean ab: result) {

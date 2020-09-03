@@ -79,20 +79,25 @@ public class NewCasesServlet extends HttpServlet {
 
 		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair);
 
+		boolean hasNoZero = false;
 		for (int k = lastDay; k >= firstDay; --k) {
-			writer.println(String.format("<tr><td>%s</td><td>%.1f</td><td>%.1f</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+			if (covidStat.getCases().get(k) > 0.0001) {
+				hasNoZero = true;
+			}
+//			LOGGER.log(Level.INFO, String.format("NewCasesServlet: k=%d, firstDay = %d, lastDay=%d", k, firstDay, lastDay));
+			double hiddenHolders = k <= lastDay - 9 ? covidStat.getHiddenHolders().getOrDefault(k, 0.0) : covidStat.getHiddenHolders1().get(k);
+			double infectionRate = k <= lastDay - 10 ? covidStat.getInfectionRate().getOrDefault(k, 0.0): covidStat.getInfectionRate1().get(k);
+			double totalInfectionRate = k <= lastDay - 10 ? covidStat.getTotalInfectionRate().get(k) : covidStat.getTotalInfectionRate1().get(k);
+			String hiddenHoldersClass = k <= lastDay - 9 ? "tab_hh_normal" : "tab_hh_prediction";
+			String infectionRateClass = k <= lastDay - 10 ? "tab_ir_normal" : "tab_ir_prediction";
+			String totalInfectionRateClass = k <= lastDay - 10 ? "tab_tr_normal" : "tab_tr_prediction";
+			writer.println(String.format("<tr><td>%s</td><td>%s</td><td>%.1f</td><td>%s</td><td>%s</td><td>%s</td></tr>",
 					CovidTools.dayToDate(k+1),
-					covidStat.getCases().get(k),
+					hasNoZero ? String.format("%.1f", covidStat.getCases().get(k)) : "?",
 					covidStat.getSum().get(k),
-					k <= lastDay - 9
-						? String.format("<div class=\"tab_hh_normal\">%.1f</div>", covidStat.getHiddenHolders().get(k))
-						: String.format("<div class=\"tab_hh_prediction\">%.1f</div>", covidStat.getHiddenHolders1().get(k)),
-					k <= lastDay - 10
-						? String.format("<div class=\"tab_ir_normal\">%f</div>", covidStat.getInfectionRate().get(k))
-						: String.format("<div class=\"tab_ir_prediction\">%f</div>", covidStat.getInfectionRate1().get(k)),
-					k <= lastDay - 10
-						? String.format("<div class=\"tab_tr_normal\">%f</div>", covidStat.getTotalInfectionRate().get(k))
-						: String.format("<div class=\"tab_tr_prediction\">%f</div>", covidStat.getTotalInfectionRate1().get(k))));
+					String.format("<div class=\"%s\">%.1f</div>", hiddenHoldersClass, hiddenHolders),
+					String.format("<div class=\"%s\">%f</div>", infectionRateClass, infectionRate),
+					String.format("<div class=\"%s\">%f</div>", totalInfectionRateClass, totalInfectionRate)));
 		}
 		writer.println("</tbody>");
 		writer.println("</table>");

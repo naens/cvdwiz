@@ -75,12 +75,12 @@ public class CovidStat {
 			}
 			s = s1;
 		}
-		for (int k = firstDay; k <= lastDay; ++k) {
-			if (Math.abs(casesOld.getOrDefault(k, 0.0) - cases.getOrDefault(k, 0.0)) > 0.0001) {
-				LOGGER.log(Level.INFO, String.format("fixNegative: k=%d %2f -> %2f",
-						k, casesOld.getOrDefault(k, 0.0), cases.getOrDefault(k, 0.0)));
-			}
-		}
+//		for (int k = firstDay; k <= lastDay; ++k) {
+//			if (Math.abs(casesOld.getOrDefault(k, 0.0) - cases.getOrDefault(k, 0.0)) > 0.0001) {
+//				LOGGER.log(Level.INFO, String.format("fixNegative: k=%d %2f -> %2f",
+//						k, casesOld.getOrDefault(k, 0.0), cases.getOrDefault(k, 0.0)));
+//			}
+//		}
 	}
 
 	private void repair() {

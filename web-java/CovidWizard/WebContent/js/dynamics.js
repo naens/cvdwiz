@@ -128,7 +128,18 @@ function updateGraphs() {
 		var density = 1000 * data[info].hlast / data[info].population;
 		$('#density_field').html(round_num(density, 3));
 		$('#density_field').css('color', getDensityColor(density));
-		$('#new_cases_field').html(round_num(data[info].lastCases, 0));
+		if (data[info].lastCases > 0.00001) {
+			$('#new_cases_field').html(round_num(data[info].lastCases, 0));
+		} else {
+			var s = "";
+			var n = data[info].zeroCases;
+			var i = 0;
+			while (i < n) {
+				s += "?"
+				++i;
+			}
+			$('#new_cases_field').html(s);
+		}
 		pdata = data;
 		var hh_len = pdata[hidden_virus_holders_index].x.length;
 		if (data[hidden_virus_holders_index].y[hh_len - 1] < data[hidden_virus_holders_index].y[hh_len - 2]) {
@@ -136,7 +147,7 @@ function updateGraphs() {
 		} else if (data[hidden_virus_holders_index].y[hh_len - 1] > data[hidden_virus_holders_index].y[hh_len - 2]) {
 			$('#arrow').html("&#9650;")
 		} else {
-			$('#arrow').html("&#2b24;")
+			$('#arrow').html("&#8226;")
 		}
 		lastDate = new Date(pdata[hidden_virus_holders_1].x[pdata[hidden_virus_holders_1].x.length - 1]);
 		data[hidden_virus_holders_index].line = Object.assign({}, data_line);
