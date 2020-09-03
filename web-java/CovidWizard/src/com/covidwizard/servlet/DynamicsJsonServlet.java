@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -45,7 +46,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 	class Info {
 		long population;
 		double hlast;
-		int lastCases;
+		Double lastCases;
 	}
 
 	@Override
@@ -82,7 +83,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
 		int firstDay = items.get(0).getDay();
-		Map<Integer, Integer> cases = new HashMap<Integer, Integer>();
+		Map<Integer, Double> cases = new HashMap<Integer, Double>();
 		for (int i = 0; i < items.size(); ++i) {
 			DataItem item = items.get(i);
 			cases.put(item.getDay(), item.getNewCases());
@@ -123,9 +124,11 @@ public class DynamicsJsonServlet extends HttpServlet {
 			arrayBeanEpidemicThreshold.x.add(CovidTools.dayToDate(k+1));	// +1 day fix
 			arrayBeanEpidemicThreshold.y.add(1.0);
 		}
+		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: lastDay=%d", lastDay));
 
 		Info info = new Info();
 		info.population = population;
+//		info.hlast = covidStat.getHiddenHolders().get(Collections.max(covidStat.getHiddenHolders().keySet()));
 		info.hlast = covidStat.getHiddenHolders().get(lastDay - 9);
 		info.lastCases = covidStat.getCases().get(Collections.max(covidStat.getCases().keySet()));
 

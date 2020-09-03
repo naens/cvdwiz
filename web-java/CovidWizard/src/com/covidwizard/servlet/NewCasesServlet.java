@@ -71,7 +71,7 @@ public class NewCasesServlet extends HttpServlet {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
 		int firstDay = items.get(0).getDay();
-		Map<Integer, Integer> cases = new HashMap<Integer, Integer>();
+		Map<Integer, Double> cases = new HashMap<Integer, Double>();
 		for (int i = 0; i < items.size(); ++i) {
 			DataItem item = items.get(i);
 			cases.put(item.getDay(), item.getNewCases());
@@ -80,12 +80,12 @@ public class NewCasesServlet extends HttpServlet {
 		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair);
 
 		for (int k = lastDay; k >= firstDay; --k) {
-			writer.println(String.format("<tr><td>%s</td><td>%d</td><td>%d</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+			writer.println(String.format("<tr><td>%s</td><td>%.1f</td><td>%.1f</td><td>%s</td><td>%s</td><td>%s</td></tr>",
 					CovidTools.dayToDate(k+1),
 					covidStat.getCases().get(k),
 					covidStat.getSum().get(k),
 					k <= lastDay - 9
-						? String.format("<div class=\"tab_hh_normal\">%d</div>", covidStat.getHiddenHolders().get(k))
+						? String.format("<div class=\"tab_hh_normal\">%.1f</div>", covidStat.getHiddenHolders().get(k))
 						: String.format("<div class=\"tab_hh_prediction\">%.1f</div>", covidStat.getHiddenHolders1().get(k)),
 					k <= lastDay - 10
 						? String.format("<div class=\"tab_ir_normal\">%f</div>", covidStat.getInfectionRate().get(k))

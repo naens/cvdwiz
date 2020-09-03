@@ -43,7 +43,8 @@ cvd_db_init ()
         country_group INTEGER,
         country INTEGER,
         FOREIGN KEY (country_group) REFERENCES country_group(id),
-        FOREIGN KEY (country) REFERENCES country(id)
+        FOREIGN KEY (country) REFERENCES country(id),
+        PRIMARY KEY (country_group, country)
     );
 
     CREATE TABLE IF NOT EXISTS country_code (

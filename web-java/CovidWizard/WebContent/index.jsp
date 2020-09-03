@@ -112,7 +112,7 @@
 			<input type="hidden" id="repair" name="repair" value="restore"/>
 			<button id="repair_button" type="button" onclick="repairClick()">Repair</button>
 			<div id="cases">Safe / Last # Cases: <div id="cases_field"></div> / <div id="new_cases_field"></div></div>
-			<div id="density"><a href="#density_popup" rel="modal:open">Transmission Risk</a>: <div id="density_field"></div>&nbsp;(<div id="density_table_field"></div>/<div id="density_total_size"></div>)</div>
+			<div id="density"><a href="#density_popup" rel="modal:open">Transmission Risk</a>: <div id="density_field"></div>&nbsp;(<div id="density_table_field"></div>/<div id="density_total_size"></div>)&nbsp;<div id="arrow"></div></div>
 		</div>
 		<div id="footer">
 			<div id="ft_addr">

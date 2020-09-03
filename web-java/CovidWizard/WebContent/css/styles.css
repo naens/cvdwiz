@@ -26,10 +26,10 @@
 #faq {
 	max-width: 900px;
 	z-index: 20;
-    height: auto;
-    max-height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+	height: auto;
+	max-height: 100%;
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 div#faq p {
@@ -211,6 +211,18 @@ p {
 }
 
 #density_total_size {
+	display: inline;
+}
+
+.density_country_name {
+	text-decoration: underline;
+}
+
+.density_country_name:hover {
+	cursor: pointer;
+}
+
+#arrow {
 	display: inline;
 }
 

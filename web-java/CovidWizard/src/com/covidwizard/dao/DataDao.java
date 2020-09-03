@@ -66,7 +66,7 @@ public class DataDao implements Dao<DataItem, DataItemKey> {
 
 				statement.setInt(1, dataItem.getDay());
 				statement.setLong(2, dataItem.getCountry().getId());
-				statement.setInt(3, dataItem.getNewCases());
+				statement.setInt(3, (int)dataItem.getNewCases());
 
 				int numberOfInsertedRows = statement.executeUpdate();
 				if (numberOfInsertedRows == 0) {

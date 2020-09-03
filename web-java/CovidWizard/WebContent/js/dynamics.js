@@ -26,6 +26,18 @@ function onCountryGroupSelect() {
 	updateDensityTable();
 }
 
+function getDensityColor(density) {
+	if (density < 0.2) {
+		return "green";
+	} else if (density < 0.4) {
+		return "orange";
+	} else if (density < 0.8) {
+		return "red";
+	} else {
+		return "black";
+	}
+}
+
 function makeDensityTable(header, rows) {
 	var table = document.createElement('table');
 	var tableBody = document.createElement('tbody');
@@ -44,35 +56,37 @@ function makeDensityTable(header, rows) {
 
 	rows.forEach(function(rowData) {
 		var row = document.createElement('tr');
-		// TODO for rowData[2]: green <0.2, yellow <0.4, red <0.8, black otherwise
 
 		var i = 0;
 		rowData.forEach(function(cellData) {
 			var cell = document.createElement('td');
 			var textNode = document.createTextNode(cellData);
-    		var container = document.createElement("span");
+			var container = document.createElement("span");
 			container.appendChild(textNode);
+			if (i == 1) {
+				container.id = rowData[1];
+				container.addEventListener("click", clickCountry, true);
+				container.className = "density_country_name";
+			}
 			if (i > 0) {
-				if (rowData[2] < 0.2) {
-					container.style.color = "green";
-				} else if (rowData[2] < 0.4) {
-					container.style.color = "orange";
-				} else if (rowData[2] < 0.8) {
-					container.style.color = "red";
-				} else {
-					container.style.color = "black";
-				}
+				container.style.color = getDensityColor(rowData[2]);
 			}
 			cell.appendChild(container);
 			row.appendChild(cell);
 			++i;
 		});
-
+		
 		tableBody.appendChild(row);
 	});
 
 	table.appendChild(tableBody);
 	return table;
+}
+
+function clickCountry(event) {
+	selectCountry(event.target.id);
+//	$('#density_popup').hide();
+	$(".close-modal").click();
 }
 
 function updateDensityTable() {
@@ -93,7 +107,8 @@ function updateDensityTable() {
 }
 
 function round_num(number, digits) {
-	return number.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+//	return number.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits }).toFixed(digits);;
+	return number.toFixed(digits);;
 }
 
 
@@ -110,9 +125,19 @@ function updateGraphs() {
 		//		alert(data[info].population)
 		$('#population_field').html(round_num(data[info].population, 0));
 		$('#cases_field').html(round_num(data[info].hlast / 10, 0));
-		$('#density_field').html(round_num(1000 * data[info].hlast / data[info].population, 3));
+		var density = 1000 * data[info].hlast / data[info].population;
+		$('#density_field').html(round_num(density, 3));
+		$('#density_field').css('color', getDensityColor(density));
 		$('#new_cases_field').html(round_num(data[info].lastCases, 0));
 		pdata = data;
+		var hh_len = pdata[hidden_virus_holders_index].x.length;
+		if (data[hidden_virus_holders_index].y[hh_len - 1] < data[hidden_virus_holders_index].y[hh_len - 2]) {
+			$('#arrow').html("&#9660;")
+		} else if (data[hidden_virus_holders_index].y[hh_len - 1] > data[hidden_virus_holders_index].y[hh_len - 2]) {
+			$('#arrow').html("&#9650;")
+		} else {
+			$('#arrow').html("&#2b24;")
+		}
 		lastDate = new Date(pdata[hidden_virus_holders_1].x[pdata[hidden_virus_holders_1].x.length - 1]);
 		data[hidden_virus_holders_index].line = Object.assign({}, data_line);
 		data[total_infection_rate_index].line = Object.assign({}, data_line);

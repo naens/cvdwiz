@@ -6,7 +6,7 @@ public class DataItem {
 
 	private int day;
 	private Country country;
-	private int newCases;
+	private double newCases;
 
 	public int getDay() {
 		return day;
@@ -24,7 +24,7 @@ public class DataItem {
 		this.country = country;
 	}
 
-	public int getNewCases() {
+	public double getNewCases() {
 		return newCases;
 	}
 
@@ -44,7 +44,7 @@ public class DataItem {
 	}
 
 	// country can be null if group or world
-	public DataItem(int day, Country country, int newCases) {
+	public DataItem(int day, Country country, double newCases) {
 		super();
 		this.day = day;
 		this.country = country;

@@ -35,12 +35,12 @@ public class CovidStat {
 		}
 	}
 
-	private Map<Integer, Integer> cases = null;
-	private Map<Integer, Integer> totalCases = new HashMap<Integer, Integer>();
-	private Map<Integer, Integer> hiddenHolders = new HashMap<Integer, Integer>();
+	private Map<Integer, Double> cases = null;
+	private Map<Integer, Double> totalCases = new HashMap<Integer, Double>();
+	private Map<Integer, Double> hiddenHolders = new HashMap<Integer, Double>();
 	private Map<Integer, Double> infectionRate = new HashMap<Integer, Double>();
 	private Map<Integer, Double> totalInfectionRate = new HashMap<Integer, Double>();
-	private Map<Integer, Integer> sum = new HashMap<Integer, Integer>();
+	private Map<Integer, Double> sum = new HashMap<Integer, Double>();
 	private Map<Integer, Double> infectionRate1 = new HashMap<Integer, Double>();
 	private Map<Integer, Double> totalInfectionRate1 = new HashMap<Integer, Double>();
 	private Map<Integer, Double> hiddenHolders1 = new HashMap<Integer, Double>();
@@ -48,7 +48,7 @@ public class CovidStat {
 	private int firstDay;
 	private int lastDay;
 
-	public CovidStat(Map<Integer, Integer> cases, int firstDay, int lastDay, boolean repair) {
+	public CovidStat(Map<Integer, Double> cases, int firstDay, int lastDay, boolean repair) {
 		this.cases = cases;
 		this.firstDay = firstDay;
 		this.lastDay = lastDay;
@@ -58,50 +58,80 @@ public class CovidStat {
 		fillArrays();
 	}
 
+	private void fixNegative() {
+		double s = 0;
+		Map<Integer, Double> casesOld = new HashMap<Integer, Double>();
+		for (Entry<Integer, Double> entry : cases.entrySet()) {
+			casesOld.put(entry.getKey(), entry.getValue());
+		}
+		for (int k = firstDay; k <= lastDay; ++k) {
+			double s1 = s + cases.getOrDefault(k, 0.0);
+			if (cases.getOrDefault(k, 0.0) < 0.0) {
+				double r = s / s1;
+				cases.put(k, 0.0);
+				for (int j = firstDay; j <= k; ++j) {
+					cases.put(j, cases.getOrDefault(j, 0.0) / r);
+				}
+			}
+			s = s1;
+		}
+		for (int k = firstDay; k <= lastDay; ++k) {
+			if (Math.abs(casesOld.getOrDefault(k, 0.0) - cases.getOrDefault(k, 0.0)) > 0.0001) {
+				LOGGER.log(Level.INFO, String.format("fixNegative: k=%d %2f -> %2f",
+						k, casesOld.getOrDefault(k, 0.0), cases.getOrDefault(k, 0.0)));
+			}
+		}
+	}
+
 	private void repair() {
-		final int drop = 3;
-		int alevel = 0;
+		final double drop = 3.0;
+		double alevel = 0;
 		for (int k = firstDay; k <= lastDay; ++k) {
 			int k2 = k;
 			int s = 0;
-			if (cases.getOrDefault(k, 0) < alevel) {
+			if (cases.getOrDefault(k, 0.0) < alevel) {
 				int k1 = k;
-				while (cases.getOrDefault(k2, 0) <= alevel && k2 <= lastDay) {
-					s += cases.getOrDefault(k2, 0);
+				while (cases.getOrDefault(k2, 0.0) <= alevel && k2 <= lastDay) {
+					s += cases.getOrDefault(k2, 0.0);
 					++k2;
 				}
 				if (k2 <= lastDay) {
-					s += cases.getOrDefault(k2, 0);
-					int newLevel = s / (k2 - k1 + 1);
-					for (int kk = k1; kk <= k2 - 1; ++kk) {
+					s += cases.getOrDefault(k2, 0.0);
+					double newLevel = s / (k2 - k1 + 1);
+					for (int kk = k1; kk <= k2; ++kk) {
 						cases.put(kk, newLevel);
 					}
-					cases.put(k2, s - (k2 - k1) * newLevel);
+//					cases.put(k2, s - (k2 - k1) * newLevel);
 					k = k2;
 				}
 			}
-			alevel = cases.getOrDefault(k2, 0) / drop;
+			alevel = cases.getOrDefault(k2, 0.0) / drop;
 		}
 	}
 
 	private void fillTotalCases() {
-		int prev = 0;
+		double prev = 0;
 		for (int k = firstDay; k <= lastDay; ++k) {
 			if (cases.containsKey(k)) {
 				prev = prev + cases.get(k);
 				totalCases.put(k, prev);
 			} else {
-				totalCases.put(k, 0);
+				totalCases.put(k, 0.0);
 			}
+//			if (k > lastDay - 20) {
+//				LOGGER.log(Level.INFO, String.format("fillTotalCases: k=%d: =%d", k, totalCases.get(k)));
+//			}
 		}
 	}
 
 	private void fillHiddenHolders() {
 		for (int k = firstDay; k <= lastDay; ++k) {
 			if (totalCases.containsKey(k + 9) && totalCases.containsKey(k - 1)
-					&& totalCases.get(k + 9) > totalCases.get(k - 1)) {
+					&& totalCases.getOrDefault(k + 9, 0.0) > 0) {
 				hiddenHolders.put(k, totalCases.get(k + 9) - totalCases.get(k - 1));
-//				LOGGER.log(Level.INFO, String.format("fillHiddenHolders: k=%d: =%d", k, hiddenHolders.get(k)));
+//				if (k > lastDay - 20) {
+//					LOGGER.log(Level.INFO, String.format("fillHiddenHolders: k=%d: =%d", k, hiddenHolders.get(k)));
+//				}
 			}
 		}
 	}
@@ -109,9 +139,9 @@ public class CovidStat {
 	private void fillInfectionRate() {
 		for (int k = firstDay; k <= lastDay; ++k) {
 			if (hiddenHolders.containsKey(k)) {
-				int h = hiddenHolders.get(k);
-				if (cases.containsKey(k + 10) && h != 0) {
-					infectionRate.put(k, ((double) cases.get(k + 10)) / ((double) h));
+				double h = hiddenHolders.get(k);
+				if (cases.containsKey(k + 10) && h > 0.0) {
+					infectionRate.put(k, (cases.get(k + 10)) / h);
 //					LOGGER.log(Level.INFO, String.format("k=%d, ir=%f", k, infectionRate.get(k)));
 				}
 			}
@@ -131,9 +161,9 @@ public class CovidStat {
 	}
 
 	private void fillSum() {
-		int sum = 0;
+		double sum = 0;
 		for (int k = firstDay; k <= lastDay; ++k) {
-			sum += cases.getOrDefault(k, 0);
+			sum += cases.getOrDefault(k, 0.0);
 			this.sum.put(k, sum);
 		}
 	}
@@ -198,6 +228,7 @@ public class CovidStat {
 	}
 
 	private void fillArrays() {
+		fixNegative();
 		fillTotalCases();
 		fillHiddenHolders();
 		fillInfectionRate();
@@ -208,15 +239,15 @@ public class CovidStat {
 		fillHiddenHolders1();
 	}
 
-	public Map<Integer, Integer> getCases() {
+	public Map<Integer, Double> getCases() {
 		return cases;
 	}
 
-	public Map<Integer, Integer> getTotalCases() {
+	public Map<Integer, Double> getTotalCases() {
 		return totalCases;
 	}
 
-	public Map<Integer, Integer> getHiddenHolders() {
+	public Map<Integer, Double> getHiddenHolders() {
 		return hiddenHolders;
 	}
 
@@ -228,7 +259,7 @@ public class CovidStat {
 		return totalInfectionRate;
 	}
 
-	public Map<Integer, Integer> getSum() {
+	public Map<Integer, Double> getSum() {
 		return sum;
 	}
 
@@ -249,21 +280,27 @@ public class CovidStat {
 	}
 
 	private double getDensity(Country country) {
-		long population = country.getPopulation();
-		int maxDay = Collections.max(getHiddenHolders().keySet());
-//		LOGGER.log(Level.INFO, String.format("getDensity: maxDay=%d", maxDay));
-		double hlast = getHiddenHolders().get(maxDay);
-		return 1000.0 * hlast / population;
+		if (!getHiddenHolders().isEmpty()) {
+			long population = country.getPopulation();
+			int maxDay = Collections.max(getHiddenHolders().keySet());
+	//		LOGGER.log(Level.INFO, String.format("getDensity: maxDay=%d", maxDay));
+			double hlast = getHiddenHolders().get(maxDay);
+			return 1000.0 * hlast / population;
+		} else {
+			LOGGER.log(Level.INFO, String.format("[!!!] getDensity: no data for %s(%d)", country.getName(), country.getId()));
+			return 0;
+		}
 	}
 
 	// calculate the density for the country
 	private static double getCountryDensity(Country country) {
+		LOGGER.log(Level.INFO, String.format("getCountryDensity for %s(%d)", country.getName(), country.getId()));
 		int firstDay = dataDao.getFirstDay(country);
 		int lastDay = dataDao.getLastDay(country);
 //		LOGGER.log(Level.INFO, String.format("getCountryDensity: country=%s(%d), firstDay=%d, lastDay=%d", country.getName(), country.getId(), firstDay, lastDay));
 
 		List<DataItem> items = dataDao.getDataByCountry(country);
-		Map<Integer, Integer> cases = new HashMap<Integer, Integer>();
+		Map<Integer, Double> cases = new HashMap<Integer, Double>();
 		for (int i = 0; i < items.size(); ++i) {
 			DataItem item = items.get(i);
 			cases.put(item.getDay(), item.getNewCases());
