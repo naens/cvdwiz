@@ -89,7 +89,7 @@ public class CovidStat {
 //		}
 		for (int k = firstDay; k <= lastDay; ++k) {
 			int k2 = k;
-			int s = 0;
+			double s = 0;
 			if (cases.getOrDefault(k, 0.0) < alevel) {
 				int k1 = k;
 				while (cases.getOrDefault(k2, 0.0) <= alevel && k2 <= lastDay) {
@@ -99,6 +99,7 @@ public class CovidStat {
 				if (k2 <= lastDay) {
 					s += cases.getOrDefault(k2, 0.0);
 					double newLevel = s / (k2 - k1 + 1);
+//					LOGGER.log(Level.INFO, String.format("repair: new level = %.1f (=%.1f / %d)", newLevel, s, (k2 - k1 + 1)));
 					for (int kk = k1; kk <= k2; ++kk) {
 						cases.put(kk, newLevel);
 					}
@@ -304,7 +305,7 @@ public class CovidStat {
 
 	// calculate the density for the country
 	private static double getCountryDensity(Country country) {
-		LOGGER.log(Level.INFO, String.format("getCountryDensity for %s(%d)", country.getName(), country.getId()));
+//		LOGGER.log(Level.INFO, String.format("CovidStat: getCountryDensity for %s(%d)", country.getName(), country.getId()));
 		int firstDay = dataDao.getFirstDay(country);
 		int lastDay = dataDao.getLastDay(country);
 //		LOGGER.log(Level.INFO, String.format("getCountryDensity: country=%s(%d), firstDay=%d, lastDay=%d", country.getName(), country.getId(), firstDay, lastDay));
