@@ -135,6 +135,10 @@ p {
 	padding-top: 10px;
 }
 
+#dates_line2 {
+	margin-top: 12px;
+}
+
 #plot {
 	position: relative;
 	top: 60px;

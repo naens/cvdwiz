@@ -116,7 +116,9 @@ function updateGraphs() {
 	resetDate();
 	var country = document.getElementById("country").value;
 	var repair = getRepair();
-	$.getJSON(`/dynamics.json?country=${country}&repair=${repair}`, function(data) {
+	var prediction = $('#date_prediction').val();
+
+	$.getJSON(`/dynamics.json?country=${country}&repair=${repair}&prediction=${prediction}`, function(data) {
 		var data_line = {
 			shape: "spline",
 			smoothing: 1.3,
@@ -389,6 +391,10 @@ function onDateChange() {
 	//drawLine1();
 }
 
+function onPredictionDateChange() {
+	updateGraphs();
+}
+
 function drawLine1() {
 	var line_label = '1';
 	var line_index = -1;
@@ -428,8 +434,9 @@ $(document).ready(function() {
 
 		var country = document.getElementById("country").value;
 		var repair = $('#repair').val();
+		var prediction = $('#date_prediction').val();
 
-		$.get(`/newcases?country=${country}&repair=${repair}`, function(html) {
+		$.get(`/newcases?country=${country}&repair=${repair}&prediction=${prediction}`, function(html) {
 			$('#data_table').html(html);
 		});
 	});

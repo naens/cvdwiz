@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -39,6 +40,8 @@ public class NewCasesServlet extends HttpServlet {
 		String countryParameter = request.getParameter("country");
 
 		boolean repair = request.getParameter("repair").equals("repair");
+		String predictionString = request.getParameter("prediction");
+
 		PrintWriter writer = response.getWriter();
 		writer.println("<table border=\"1\">");
 		writer.println("<tbody>");
@@ -70,6 +73,7 @@ public class NewCasesServlet extends HttpServlet {
 		} else {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
+		int predictionDays = predictionString.isEmpty() ? 0 : CovidTools.dateToDay(predictionString) - lastDay;
 		int firstDay = items.get(0).getDay();
 		Map<Integer, Double> cases = new HashMap<Integer, Double>();
 		for (int i = 0; i < items.size(); ++i) {
@@ -77,24 +81,26 @@ public class NewCasesServlet extends HttpServlet {
 			cases.put(item.getDay(), item.getNewCases());
 		}
 
-		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair);
+		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair, predictionDays);
 
+		LOGGER.log(Level.INFO, String.format("NewCasesServlet: predictionDays=%d", predictionDays));
 		boolean hasNoZero = false;
-		for (int k = lastDay; k >= firstDay; --k) {
+		for (int k = lastDay + predictionDays; k >= firstDay; --k) {
+//			LOGGER.log(Level.INFO, String.format("NewCasesServlet: country=%s, k=%d, firstDay = %d, lastDay=%d", countryParameter, k, firstDay, lastDay));
 			if (covidStat.getCases().get(k) > 0.0001) {
 				hasNoZero = true;
 			}
-//			LOGGER.log(Level.INFO, String.format("NewCasesServlet: k=%d, firstDay = %d, lastDay=%d", k, firstDay, lastDay));
-			double hiddenHolders = k <= lastDay - 9 ? covidStat.getHiddenHolders().getOrDefault(k, 0.0) : covidStat.getHiddenHolders1().get(k);
-			double infectionRate = k <= lastDay - 10 ? covidStat.getInfectionRate().getOrDefault(k, 0.0): covidStat.getInfectionRate1().get(k);
-			double totalInfectionRate = k <= lastDay - 10 ? covidStat.getTotalInfectionRate().get(k) : covidStat.getTotalInfectionRate1().get(k);
+			double hiddenHolders = covidStat.getHiddenHolders().getOrDefault(k, 0.0);
+			double infectionRate = covidStat.getInfectionRate().getOrDefault(k, 0.0);
+			double totalInfectionRate = covidStat.getTotalInfectionRate().getOrDefault(k, 0.0);
 			String hiddenHoldersClass = k <= lastDay - 9 ? "tab_hh_normal" : "tab_hh_prediction";
 			String infectionRateClass = k <= lastDay - 10 ? "tab_ir_normal" : "tab_ir_prediction";
 			String totalInfectionRateClass = k <= lastDay - 10 ? "tab_tr_normal" : "tab_tr_prediction";
 			writer.println(String.format("<tr><td>%s</td><td>%s</td><td>%.1f</td><td>%s</td><td>%s</td><td>%s</td></tr>",
 					CovidTools.dayToDate(k+1),
 					hasNoZero ? String.format("%.1f", covidStat.getCases().get(k)) : "?",
-					covidStat.getSum().get(k),
+//					covidStat.getSum().get(k),
+					covidStat.getTotalCases().get(k),
 					String.format("<div class=\"%s\">%.1f</div>", hiddenHoldersClass, hiddenHolders),
 					String.format("<div class=\"%s\">%f</div>", infectionRateClass, infectionRate),
 					String.format("<div class=\"%s\">%f</div>", totalInfectionRateClass, totalInfectionRate)));

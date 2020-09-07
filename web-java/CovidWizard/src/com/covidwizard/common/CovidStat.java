@@ -40,18 +40,17 @@ public class CovidStat {
 	private Map<Integer, Double> hiddenHolders = new HashMap<Integer, Double>();
 	private Map<Integer, Double> infectionRate = new HashMap<Integer, Double>();
 	private Map<Integer, Double> totalInfectionRate = new HashMap<Integer, Double>();
-	private Map<Integer, Double> sum = new HashMap<Integer, Double>();
-	private Map<Integer, Double> infectionRate1 = new HashMap<Integer, Double>();
-	private Map<Integer, Double> totalInfectionRate1 = new HashMap<Integer, Double>();
-	private Map<Integer, Double> hiddenHolders1 = new HashMap<Integer, Double>();
 
 	private int firstDay;
 	private int lastDay;
+	private int predictionDays;
 
-	public CovidStat(Map<Integer, Double> cases, int firstDay, int lastDay, boolean repair) {
+	public CovidStat(Map<Integer, Double> cases, int firstDay, int lastDay, boolean repair, int predictionDays) {
+		assert(predictionDays > 0);
 		this.cases = cases;
 		this.firstDay = firstDay;
 		this.lastDay = lastDay;
+		this.predictionDays = predictionDays;
 		fillArrays(repair);
 	}
 
@@ -120,12 +119,8 @@ public class CovidStat {
 	private void fillTotalCases() {
 		double prev = 0;
 		for (int k = firstDay; k <= lastDay; ++k) {
-			if (cases.containsKey(k)) {
-				prev = prev + cases.get(k);
-				totalCases.put(k, prev);
-			} else {
-				totalCases.put(k, 0.0);
-			}
+			prev = prev + cases.getOrDefault(k, 0.0);
+			totalCases.put(k, prev);
 //			if (k > lastDay - 20) {
 //				LOGGER.log(Level.INFO, String.format("fillTotalCases: k=%d: =%d", k, totalCases.get(k)));
 //			}
@@ -133,19 +128,19 @@ public class CovidStat {
 	}
 
 	private void fillHiddenHolders() {
-		for (int k = firstDay; k <= lastDay; ++k) {
+		for (int k = firstDay; k <= lastDay - 11; ++k) {
 			if (totalCases.containsKey(k + 9) && totalCases.containsKey(k - 1)
 					&& totalCases.getOrDefault(k + 9, 0.0) > 0) {
 				hiddenHolders.put(k, totalCases.get(k + 9) - totalCases.get(k - 1));
 //				if (k > lastDay - 20) {
-//					LOGGER.log(Level.INFO, String.format("fillHiddenHolders: k=%d: =%d", k, hiddenHolders.get(k)));
+//					LOGGER.log(Level.INFO, String.format("fillHiddenHolders: k=%d: %s", k, hiddenHolders.get(k)));
 //				}
 			}
 		}
 	}
 
 	private void fillInfectionRate() {
-		for (int k = firstDay; k <= lastDay; ++k) {
+		for (int k = firstDay; k <= lastDay - 10; ++k) {
 			if (hiddenHolders.containsKey(k)) {
 				double h = hiddenHolders.get(k);
 				if (cases.containsKey(k + 10) && h > 0.0) {
@@ -157,7 +152,7 @@ public class CovidStat {
 	}
 
 	private void fillTotalInfectionRate() {
-		for (int k = firstDay; k <= lastDay; ++k) {
+		for (int k = firstDay; k <= lastDay - 10; ++k) {
 			double G = 0;
 			for (int i = 0; i <= 9; ++i) {
 				if (infectionRate.containsKey(k - i)) {
@@ -168,71 +163,84 @@ public class CovidStat {
 		}
 	}
 
-	private void fillSum() {
-		double sum = 0;
-		for (int k = firstDay; k <= lastDay; ++k) {
-			sum += cases.getOrDefault(k, 0.0);
-			this.sum.put(k, sum);
-		}
-	}
-
-	private void fillInfectionRate1() {
-		for (int k = lastDay - 11; k <= lastDay; ++k) {
+	private void fillInfectionRatePrediction() {
+		for (int k = lastDay - 11; k <= lastDay + predictionDays; ++k) {
 			double s = 0;
 			for (int i = 1; i <= 10; ++i) {
 				double a = 0;
 				if (infectionRate.containsKey(k - i)) {
 					a = infectionRate.get(k - i);
-				} else if (infectionRate1.containsKey(k - i)) {
-					a = infectionRate1.get(k - i);
 				}
 //				LOGGER.log(Level.INFO, String.format("k=%d, i=%d, k-i=%d, a=%f", k, i, k-i, a));
 				s += a;
 			}
-			infectionRate1.put(k, s / 10);
-//			LOGGER.log(Level.INFO, String.format("k=%d, s/10=%f", k, s/10));
+			infectionRate.put(k, s / 10);
+			if (k >= lastDay) {
+				LOGGER.log(Level.INFO, String.format("fillInfectionRatePrediction: k=%d, infectionRate=%f", k, infectionRate.get(k)));
+			}
 		}
 	}
 
-	private void fillTotalInfectionRate1() {
-		for (int k = lastDay - 11; k <= lastDay; ++k) {
+	private void fillTotalInfectionRatePrediction() {
+		for (int k = lastDay - 11; k <= lastDay + predictionDays; ++k) {
 			double G = 0;
 			for (int i = 0; i <= 9; ++i) {
 				double g = 0;
 				if (infectionRate.containsKey(k - i)) {
 					g = infectionRate.get(k - i);
-				} else if (infectionRate1.containsKey(k - i)) {
-					g = infectionRate1.get(k - i);
 				}
 				G += g;
 //				LOGGER.log(Level.INFO, String.format("k=%d, g=%f", k, g));
 			}
-			totalInfectionRate1.put(k, G);
-//			LOGGER.log(Level.INFO, String.format("k=%d, G=%f", k, G));
+			totalInfectionRate.put(k, G);
+			if (k >= lastDay) {
+				LOGGER.log(Level.INFO, String.format("fillTotalInfectionRatePrediction: k=%d, totalInfectionRate=%f", k, totalInfectionRate.get(k)));
+			}
 		}
 	}
 
-	private void fillHiddenHolders1() {
-		for (int k = lastDay - 10; k <= lastDay; ++k) {
+	private void fillHiddenHoldersPrediction() {
+		for (int k = lastDay - 10; k <= lastDay + predictionDays; ++k) {
 			double s = 0;
 			for (int i = 1; i <= 10; ++i) {
 				double g = 0;
 				double h = 0;
 				if (infectionRate.containsKey(k - i)) {
 					g = infectionRate.get(k - i);
-				} else if (infectionRate1.containsKey(k - i)) {
-					g = infectionRate1.get(k - i);
 				}
 				if (hiddenHolders.containsKey(k - i)) {
 					h = hiddenHolders.get(k - i);
-				} else if (hiddenHolders1.containsKey(k - i)) {
-					h = hiddenHolders1.get(k - i);
 				}
 				s += (g * h);
 			}
-			hiddenHolders1.put(k, s);
+			hiddenHolders.put(k, s);
+			if (k >= lastDay) {
+				LOGGER.log(Level.INFO, String.format("fillHiddenHoldersPrediciton: k=%d: %s", k, hiddenHolders.get(k)));
+			}
 		}
 
+	}
+
+	private void fillTotalCasesPrediction() {
+		for (int k = lastDay; k <= lastDay + predictionDays; ++k) {
+			if (totalCases.containsKey(k - 1) && totalCases.containsKey(k - 11) && infectionRate.containsKey(k - 10)) {
+				double td = totalCases.get(k - 1);
+				double g = infectionRate.get(k - 10);
+				totalCases.put(k, td + g * (td - totalCases.get(k - 11)));
+				LOGGER.log(Level.INFO, String.format("fillTotalCasesPrediction: k=%d, totalCases=%f", k, totalCases.get(k)));
+			}
+		}
+	}
+
+	private void fillCasesPrediction() {
+//		LOGGER.log(Level.INFO, String.format("fillCasesPrediction A"));
+		for (int k = lastDay; k <= lastDay + predictionDays; ++k) {
+			if (totalCases.containsKey(k) && totalCases.containsKey(k - 1)) {
+				cases.put(k, totalCases.get(k) - totalCases.get(k - 1));
+				LOGGER.log(Level.INFO, String.format("fillCasesPrediction: k=%d, cases=%f", k, cases.get(k)));
+			}
+		}
+//		LOGGER.log(Level.INFO, String.format("fillCasesPrediction B"));
 	}
 
 	private void fillArrays(boolean repair) {
@@ -244,10 +252,11 @@ public class CovidStat {
 		fillHiddenHolders();
 		fillInfectionRate();
 		fillTotalInfectionRate();
-		fillSum();
-		fillInfectionRate1();
-		fillTotalInfectionRate1();
-		fillHiddenHolders1();
+		fillInfectionRatePrediction();
+		fillTotalInfectionRatePrediction();
+		fillHiddenHoldersPrediction();
+		fillTotalCasesPrediction();
+		fillCasesPrediction();
 	}
 
 	public Map<Integer, Double> getCases() {
@@ -270,21 +279,9 @@ public class CovidStat {
 		return totalInfectionRate;
 	}
 
-	public Map<Integer, Double> getSum() {
-		return sum;
-	}
-
-	public Map<Integer, Double> getInfectionRate1() {
-		return infectionRate1;
-	}
-
-	public Map<Integer, Double> getTotalInfectionRate1() {
-		return totalInfectionRate1;
-	}
-
-	public Map<Integer, Double> getHiddenHolders1() {
-		return hiddenHolders1;
-	}
+//	public Map<Integer, Double> getSum() {
+//		return sum;
+//	}
 
 	public static void clearDensities() {
 		densityMap.clear();
@@ -317,7 +314,7 @@ public class CovidStat {
 			cases.put(item.getDay(), item.getNewCases());
 		}
 
-		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, false);
+		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, false, 0);
 		return covidStat.getDensity(country);
 	}
 

@@ -72,11 +72,17 @@
 					</c:forEach>
 				</select>
 				<div id="table_dates">
-					<label>Dates: From</label>
-					<input type="date" id="date_from" name="date_from" autocomplete="off" onchange="onDateChange()" required />
-					<label id="date_from_label">Up to</label>
-					<label id=last_day></label>
+					<div id="dates_line1">
+						<label>Dates: From</label>
+						<input type="date" id="date_from" name="date_from" autocomplete="off" onchange="onDateChange()" required />
+						<label id="date_from_label">Today: </label>
+						<label id=last_day></label>
 <!-- 					<input type="date" id="date_to" name="date_to" autocomplete="off" onchange="onDateChange()" required /> -->
+					</div>
+					<div id="dates_line2">
+						<label id="date_prediction_label">Prediction: </label>
+						<input type="date" id="date_prediction" name="date_prediction" autocomplete="off" onchange="onPredictionDateChange()" />
+					</div>
 				</div>
 			</div>
 			<div id="population">Population: <div id="population_field"></div></div>

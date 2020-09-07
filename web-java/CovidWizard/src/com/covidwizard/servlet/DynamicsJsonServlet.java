@@ -60,6 +60,8 @@ public class DynamicsJsonServlet extends HttpServlet {
 
 		String countryParameter = request.getParameter("country");
 		boolean repair = request.getParameter("repair").equals("repair");
+		String predictionString = request.getParameter("prediction");
+		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: predictionString=\"%s\"", predictionString));
 
 		List<DataItem> items = null;
 		int lastDay = -1;
@@ -83,6 +85,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 		} else {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
+		int predictionDays = predictionString.isEmpty() ? 0 : CovidTools.dateToDay(predictionString) - lastDay;
 		int firstDay = items.get(0).getDay();
 		Map<Integer, Double> cases = new HashMap<Integer, Double>();
 		for (int i = 0; i < items.size(); ++i) {
@@ -90,7 +93,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 			cases.put(item.getDay(), item.getNewCases());
 		}
 
-		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair);
+		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair, predictionDays);
 
 		Gson gson = new Gson();
 		ArrayList<ArrayBean> result = new ArrayList<ArrayBean>();
@@ -105,21 +108,25 @@ public class DynamicsJsonServlet extends HttpServlet {
 		result.add(arrayBeanTotalRate1);
 		result.add(arrayBeanHiddenHolders1);
 
-		for (int k = firstDay; k <= lastDay; ++k) {
-			if  (k <= lastDay - 9 && covidStat.getHiddenHolders().containsKey(k)) {
-				arrayBeanHiddenHolders.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
-				arrayBeanHiddenHolders.y.add((double) covidStat.getHiddenHolders().get(k));
-			} else if (covidStat.getHiddenHolders1().containsKey(k)) {
-				arrayBeanHiddenHolders1.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
-				arrayBeanHiddenHolders1.y.add(covidStat.getHiddenHolders1().get(k));
+		for (int k = firstDay; k <= lastDay + predictionDays; ++k) {
+			if (covidStat.getHiddenHolders().containsKey(k)) {
+				if  (k <= lastDay - 9) {
+					arrayBeanHiddenHolders.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
+					arrayBeanHiddenHolders.y.add((double) covidStat.getHiddenHolders().get(k));
+				} else {
+					arrayBeanHiddenHolders1.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
+					arrayBeanHiddenHolders1.y.add(covidStat.getHiddenHolders().get(k));
+				}
 			}
-
-			if  (k <= lastDay - 10 && covidStat.getTotalInfectionRate().containsKey(k)) {
-				arrayBeanTotalRate.x.add(CovidTools.dayToDate(k+1));			// +1 day fix
-				arrayBeanTotalRate.y.add(covidStat.getTotalInfectionRate().get(k));
-			} else if (covidStat.getTotalInfectionRate1().containsKey(k)) {
-				arrayBeanTotalRate1.x.add(CovidTools.dayToDate(k+1));			// +1 day fix
-				arrayBeanTotalRate1.y.add(covidStat.getTotalInfectionRate1().get(k));
+			if (covidStat.getTotalInfectionRate().containsKey(k)) {
+				if  (k <= lastDay - 10) {
+					arrayBeanTotalRate.x.add(CovidTools.dayToDate(k+1));			// +1 day fix
+					arrayBeanTotalRate.y.add(covidStat.getTotalInfectionRate().get(k));
+				} else {
+					arrayBeanTotalRate1.x.add(CovidTools.dayToDate(k+1));			// +1 day fix
+					arrayBeanTotalRate1.y.add(covidStat.getTotalInfectionRate().get(k));
+				}
+				
 			}
 
 			arrayBeanEpidemicThreshold.x.add(CovidTools.dayToDate(k+1));	// +1 day fix
