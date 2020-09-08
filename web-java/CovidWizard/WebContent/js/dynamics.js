@@ -6,7 +6,7 @@ const hidden_virus_holders_1 = 4;
 const info = 5;
 var pdata;
 var playout;
-var lastDate;
+var lastDate;	// can be in the future for predictions
 
 function getRepair() {
 	var repair = $('#repair').val();
@@ -75,7 +75,7 @@ function makeDensityTable(header, rows) {
 			row.appendChild(cell);
 			++i;
 		});
-		
+
 		tableBody.appendChild(row);
 	});
 
@@ -85,7 +85,7 @@ function makeDensityTable(header, rows) {
 
 function clickCountry(event) {
 	selectCountry(event.target.id);
-//	$('#density_popup').hide();
+	//	$('#density_popup').hide();
 	$(".close-modal").click();
 }
 
@@ -107,7 +107,7 @@ function updateDensityTable() {
 }
 
 function round_num(number, digits) {
-//	return number.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits }).toFixed(digits);;
+	//	return number.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits }).toFixed(digits);;
 	return number.toFixed(digits);;
 }
 
@@ -190,6 +190,8 @@ function updateGraphs() {
 		plot = document.getElementById('plot');
 		color1 = 'green';
 		color2 = 'black';
+		var todayDateString = data[hidden_virus_holders_1].x[8];
+		var todayDate = new Date(todayDateString);
 		var x_range = [$('#date_from').val(), getDateString(lastDate)];
 		var ys = maxValues(data, x_range[0], x_range[1]);
 		var y_range = [0, ys[0] * 1.05];
@@ -213,10 +215,23 @@ function updateGraphs() {
 			},
 			xaxis: {
 				range: x_range,
-				fixedrange: false,
+				fixedrange: true,
+//				fixedrange: false,
 				dtick: 86400000.0 * 7,	//once a week
 				tick0: '2019-12-30'     // a monday
 			},
+			shapes: [ {
+					type: 'line',
+					x0: todayDateString,
+					y0: 0,
+					x1: todayDateString,
+					y1: y_range[1],
+					line: {
+						color: 'maroon',
+						width: 2
+					}
+				}
+			],
 			yaxis: {
 				//showgrid: false,
 				range: y_range,
@@ -263,8 +278,8 @@ function updateGraphs() {
 				overlaying: 'y',
 				showticklabels: false
 			}
-		}
-		$('#last_day').html(lastDate.toLocaleDateString());
+		};
+		$('#today_day').html(todayDate.toLocaleDateString());
 		playout = layout;
 		Plotly.newPlot(plot, data, layout);
 		//drawLine1();

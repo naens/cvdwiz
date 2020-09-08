@@ -214,7 +214,7 @@ public class DataDao implements Dao<DataItem, DataItemKey> {
 	    return items;
 	}
 
-	public int getLastDay(Country country) {
+	public int getMaxDay(Country country) {
         String sql = "SELECT MAX(day) as day FROM data WHERE country = ?;";
         List<Integer> days = new LinkedList<Integer>();
 
@@ -260,7 +260,7 @@ public class DataDao implements Dao<DataItem, DataItemKey> {
 	    return days.get(0);
 	}
 
-	public int getGroupLastDay(CountryGroup countryGroup) {
+	public int getGroupMaxDay(CountryGroup countryGroup) {
         String sql = "SELECT MAX(day) as day FROM data JOIN country_group_countries "
         		+ "ON data.country = country_group_countries.country "
         		+ "WHERE country_group = ?;";
@@ -285,7 +285,7 @@ public class DataDao implements Dao<DataItem, DataItemKey> {
 	    return days.get(0);
 	}
 
-	public int getWorldLastDay() {
+	public int getWorldMaxDay() {
         String sql = "SELECT MAX(day) as day FROM data;";
         List<Integer> days = new LinkedList<Integer>();
 

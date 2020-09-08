@@ -56,24 +56,24 @@ public class NewCasesServlet extends HttpServlet {
 //			cases.put(item.getDay(), item.getNewCases());
 //		}
 		List<DataItem> items = null;
-		int lastDay = -1;
+		int maxDBDay = -1;		// last day in the database
 		if (CovidTools.isNumeric(countryParameter)) {
 			int countryId = Integer.parseInt(countryParameter);
 			Country country = countryDao.get(countryId).get();
 			items = dataDao.getDataByCountry(country);
-			lastDay = dataDao.getLastDay(country);
+			maxDBDay = dataDao.getMaxDay(country);
 		} else if (countryParameter.equals("all")) {
 			items = dataDao.getWorldData();
-			lastDay = dataDao.getWorldLastDay();
+			maxDBDay = dataDao.getWorldMaxDay();
 		} else if (countryParameter.startsWith("gr")) {
 			int groupId = Integer.parseInt(countryParameter.substring(2));
 			CountryGroup countryGroup = countryGroupDao.get(groupId).get();
 			items = dataDao.getGroupData(countryGroup);
-			lastDay = dataDao.getGroupLastDay(countryGroup);
+			maxDBDay = dataDao.getGroupMaxDay(countryGroup);
 		} else {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
-		int predictionDays = predictionString.isEmpty() ? 0 : CovidTools.dateToDay(predictionString) - lastDay;
+		int predictionDays = predictionString.isEmpty() ? 0 : CovidTools.dateToDay(predictionString) - maxDBDay;
 		int firstDay = items.get(0).getDay();
 		Map<Integer, Double> cases = new HashMap<Integer, Double>();
 		for (int i = 0; i < items.size(); ++i) {
@@ -81,11 +81,11 @@ public class NewCasesServlet extends HttpServlet {
 			cases.put(item.getDay(), item.getNewCases());
 		}
 
-		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair, predictionDays);
+		CovidStat covidStat = new CovidStat(cases, firstDay, maxDBDay, repair, predictionDays);
 
 		LOGGER.log(Level.INFO, String.format("NewCasesServlet: predictionDays=%d", predictionDays));
 		boolean hasNoZero = false;
-		for (int k = lastDay + predictionDays; k >= firstDay; --k) {
+		for (int k = maxDBDay + predictionDays; k >= firstDay; --k) {
 //			LOGGER.log(Level.INFO, String.format("NewCasesServlet: country=%s, k=%d, firstDay = %d, lastDay=%d", countryParameter, k, firstDay, lastDay));
 			if (covidStat.getCases().get(k) > 0.0001) {
 				hasNoZero = true;
@@ -93,13 +93,13 @@ public class NewCasesServlet extends HttpServlet {
 			double hiddenHolders = covidStat.getHiddenHolders().getOrDefault(k, 0.0);
 			double infectionRate = covidStat.getInfectionRate().getOrDefault(k, 0.0);
 			double totalInfectionRate = covidStat.getTotalInfectionRate().getOrDefault(k, 0.0);
-			String hiddenHoldersClass = k <= lastDay - 9 ? "tab_hh_normal" : "tab_hh_prediction";
-			String infectionRateClass = k <= lastDay - 10 ? "tab_ir_normal" : "tab_ir_prediction";
-			String totalInfectionRateClass = k <= lastDay - 10 ? "tab_tr_normal" : "tab_tr_prediction";
+			String dayClass = k == maxDBDay ? "tab_today" : "tab_day";
+			String hiddenHoldersClass = k <= maxDBDay - 9 ? "tab_hh_normal" : "tab_hh_prediction";
+			String infectionRateClass = k <= maxDBDay - 10 ? "tab_ir_normal" : "tab_ir_prediction";
+			String totalInfectionRateClass = k <= maxDBDay - 10 ? "tab_tr_normal" : "tab_tr_prediction";
 			writer.println(String.format("<tr><td>%s</td><td>%s</td><td>%.1f</td><td>%s</td><td>%s</td><td>%s</td></tr>",
-					CovidTools.dayToDate(k+1),
+					String.format("<div id=\"%s\">%s</div>", dayClass, CovidTools.dayToDate(k+1)),
 					hasNoZero ? String.format("%.1f", covidStat.getCases().get(k)) : "?",
-//					covidStat.getSum().get(k),
 					covidStat.getTotalCases().get(k),
 					String.format("<div class=\"%s\">%.1f</div>", hiddenHoldersClass, hiddenHolders),
 					String.format("<div class=\"%s\">%f</div>", infectionRateClass, infectionRate),

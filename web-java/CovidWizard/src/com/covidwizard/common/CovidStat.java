@@ -304,7 +304,7 @@ public class CovidStat {
 	private static double getCountryDensity(Country country) {
 //		LOGGER.log(Level.INFO, String.format("CovidStat: getCountryDensity for %s(%d)", country.getName(), country.getId()));
 		int firstDay = dataDao.getFirstDay(country);
-		int lastDay = dataDao.getLastDay(country);
+		int lastDay = dataDao.getMaxDay(country);
 //		LOGGER.log(Level.INFO, String.format("getCountryDensity: country=%s(%d), firstDay=%d, lastDay=%d", country.getName(), country.getId(), firstDay, lastDay));
 
 		List<DataItem> items = dataDao.getDataByCountry(country);

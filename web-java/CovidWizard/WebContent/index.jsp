@@ -76,7 +76,7 @@
 						<label>Dates: From</label>
 						<input type="date" id="date_from" name="date_from" autocomplete="off" onchange="onDateChange()" required />
 						<label id="date_from_label">Today: </label>
-						<label id=last_day></label>
+						<label id=today_day></label>
 <!-- 					<input type="date" id="date_to" name="date_to" autocomplete="off" onchange="onDateChange()" required /> -->
 					</div>
 					<div id="dates_line2">

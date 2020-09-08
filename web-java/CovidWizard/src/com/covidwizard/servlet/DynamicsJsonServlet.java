@@ -64,28 +64,28 @@ public class DynamicsJsonServlet extends HttpServlet {
 		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: predictionString=\"%s\"", predictionString));
 
 		List<DataItem> items = null;
-		int lastDay = -1;
+		int maxDBDay = -1;			// maximum day in the database
 		long population = -1;
 		if (CovidTools.isNumeric(countryParameter)) {
 			int countryId = Integer.parseInt(countryParameter);
 			Country country = countryDao.get(countryId).get();
 			items = dataDao.getDataByCountry(country);
-			lastDay = dataDao.getLastDay(country);
+			maxDBDay = dataDao.getMaxDay(country);
 			population = country.getPopulation();
 		} else if (countryParameter.equals("all")) {
 			items = dataDao.getWorldData();
-			lastDay = dataDao.getWorldLastDay();
+			maxDBDay = dataDao.getWorldMaxDay();
 			population = countryGroupDao.getWorldPopulation().get();
 		} else if (countryParameter.startsWith("gr")) {
 			int groupId = Integer.parseInt(countryParameter.substring(2));
 			CountryGroup countryGroup = countryGroupDao.get(groupId).get();
 			items = dataDao.getGroupData(countryGroup);
-			lastDay = dataDao.getGroupLastDay(countryGroup);
+			maxDBDay = dataDao.getGroupMaxDay(countryGroup);
 			population = countryGroupDao.getGroupPopulation(countryGroup).get();
 		} else {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
-		int predictionDays = predictionString.isEmpty() ? 0 : CovidTools.dateToDay(predictionString) - lastDay;
+		int predictionDays = predictionString.isEmpty() ? 0 : CovidTools.dateToDay(predictionString) - maxDBDay;
 		int firstDay = items.get(0).getDay();
 		Map<Integer, Double> cases = new HashMap<Integer, Double>();
 		for (int i = 0; i < items.size(); ++i) {
@@ -93,7 +93,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 			cases.put(item.getDay(), item.getNewCases());
 		}
 
-		CovidStat covidStat = new CovidStat(cases, firstDay, lastDay, repair, predictionDays);
+		CovidStat covidStat = new CovidStat(cases, firstDay, maxDBDay, repair, predictionDays);
 
 		Gson gson = new Gson();
 		ArrayList<ArrayBean> result = new ArrayList<ArrayBean>();
@@ -108,9 +108,9 @@ public class DynamicsJsonServlet extends HttpServlet {
 		result.add(arrayBeanTotalRate1);
 		result.add(arrayBeanHiddenHolders1);
 
-		for (int k = firstDay; k <= lastDay + predictionDays; ++k) {
+		for (int k = firstDay; k <= maxDBDay + predictionDays; ++k) {
 			if (covidStat.getHiddenHolders().containsKey(k)) {
-				if  (k <= lastDay - 9) {
+				if  (k <= maxDBDay - 9) {
 					arrayBeanHiddenHolders.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
 					arrayBeanHiddenHolders.y.add((double) covidStat.getHiddenHolders().get(k));
 				} else {
@@ -119,7 +119,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 				}
 			}
 			if (covidStat.getTotalInfectionRate().containsKey(k)) {
-				if  (k <= lastDay - 10) {
+				if  (k <= maxDBDay - 10) {
 					arrayBeanTotalRate.x.add(CovidTools.dayToDate(k+1));			// +1 day fix
 					arrayBeanTotalRate.y.add(covidStat.getTotalInfectionRate().get(k));
 				} else {
@@ -132,17 +132,17 @@ public class DynamicsJsonServlet extends HttpServlet {
 			arrayBeanEpidemicThreshold.x.add(CovidTools.dayToDate(k+1));	// +1 day fix
 			arrayBeanEpidemicThreshold.y.add(1.0);
 		}
-		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: lastDay=%d", lastDay));
+		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: lastDay=%d", maxDBDay));
 
 		Info info = new Info();
 		info.population = population;
 //		info.hlast = covidStat.getHiddenHolders().get(Collections.max(covidStat.getHiddenHolders().keySet()));
-		info.hlast = covidStat.getHiddenHolders().get(lastDay - 9);
+		info.hlast = covidStat.getHiddenHolders().get(maxDBDay - 9);
 		info.lastCases = covidStat.getCases().get(Collections.max(covidStat.getCases().keySet()));
 
 		info.zeroCases = 0;
 		boolean hasNoZero = false;
-		for (int k = lastDay; k >= firstDay && !hasNoZero; --k) {
+		for (int k = maxDBDay; k >= firstDay && !hasNoZero; --k) {
 			if (covidStat.getCases().get(k) > 0.0001) {
 				hasNoZero = true;
 			} else {
