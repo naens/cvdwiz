@@ -59,6 +59,15 @@
 			<div id="faq" class="modal"><%=(String)request.getAttribute("FAQ")%></div>
 			<div id="login"><a href="/" id="login_a">Login</a></div>
 			<div id="faq01"><a href="#faq" rel="modal:open" id="open_faq">FAQ (version 2)</a></div>
+			<div id="graph_select">
+			    <label>Graph: </label>
+				<select id="graph_select1" onchange="onGraphSelect()">
+	   				<option value="hidden_holders">Hidden Holders</option>
+	   				<option value="new_cases">New Cases</option>
+	   				<option value="total_cases">Total Cases</option>
+	   				<option value="trisk">TRisk</option>
+				</select>
+			</div>
 			<h1>COVID WIZARD</h1>
 			<div id="table_bar">
 				<select id="country" onchange="onCountrySelect()">
@@ -99,6 +108,10 @@
 			</script>
 		</c:if>
 
+		<div id="links_popup" class="modal">
+			<h4>Papers</h4>
+			<h4>Video</h4>
+		</div>
 		<div id="table_popup" class="modal">
 			<div id="data_table"></div>
 		</div>
@@ -125,7 +138,8 @@
 				&copy; <a href="https://scholar.google.com/citations?user=DJ8Ep8YAAAAJ&hl=en&oi=ao">Yurii.Nesterov@uclouvain.be</a>
 			</div>
 			<div id="ft_bkg">
-				<a href="https://arxiv.org/abs/2007.11429">Scientific Model (HIT)</a>
+<!-- 				<a href="https://arxiv.org/abs/2007.11429">Scientific Model (HIT)</a> -->
+				<a href="#links_popup" rel="modal:open">Scientific Model (HIT)</a>
 			</div>
 			<div id="open_table">
 				<a href="#table_popup" rel="modal:open">Data (from github.com)</a>

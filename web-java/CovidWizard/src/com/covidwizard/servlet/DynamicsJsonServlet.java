@@ -3,7 +3,6 @@ package com.covidwizard.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +47,7 @@ public class DynamicsJsonServlet extends HttpServlet {
 		double hlast;
 		Double lastCases;
 		int zeroCases;
+		String variableGraphName;
 	}
 
 	@Override
@@ -61,7 +61,8 @@ public class DynamicsJsonServlet extends HttpServlet {
 		String countryParameter = request.getParameter("country");
 		boolean repair = request.getParameter("repair").equals("repair");
 		String predictionString = request.getParameter("prediction");
-		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: predictionString=\"%s\"", predictionString));
+//		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: predictionString=\"%s\"", predictionString));
+		String graph = request.getParameter("graph");
 
 		List<DataItem> items = null;
 		int maxDBDay = -1;			// maximum day in the database
@@ -93,29 +94,60 @@ public class DynamicsJsonServlet extends HttpServlet {
 			cases.put(item.getDay(), item.getNewCases());
 		}
 
-		CovidStat covidStat = new CovidStat(cases, firstDay, maxDBDay, repair, predictionDays);
+		CovidStat covidStat = new CovidStat(population, cases, firstDay, maxDBDay, repair, predictionDays);
+
+		Map<Integer, Double> graphMap = null;
+		int graphPredictionStartDay = -1;
+		String variableGraphName = null;
+		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: graph=%s", graph));
+		switch (graph) {
+		case "hidden_holders":
+			variableGraphName = "Hidden Holders";
+			graphPredictionStartDay = maxDBDay - 9;
+			graphMap = covidStat.getHiddenHolders();
+			break;
+		case "new_cases":
+			variableGraphName = "New Cases";
+			graphPredictionStartDay = maxDBDay + 2;
+			graphMap = covidStat.getCases();
+			break;
+		case "total_cases":
+			variableGraphName = "Total Cases";
+			graphPredictionStartDay = maxDBDay + 1;
+			graphMap = covidStat.getTotalCases();
+			break;
+		case "trisk":
+			variableGraphName = "TRisk";
+			graphPredictionStartDay = maxDBDay + predictionDays;
+			graphMap = covidStat.getDensityList();
+			break;
+		default:
+			throw new RuntimeException("DynamicsJsonServlet: unknown graph parameter");
+		}
 
 		Gson gson = new Gson();
 		ArrayList<ArrayBean> result = new ArrayList<ArrayBean>();
-		ArrayBean arrayBeanHiddenHolders = new ArrayBean();
+		ArrayBean arrayBeanGraph = new ArrayBean();
 		ArrayBean arrayBeanTotalRate = new ArrayBean();
 		ArrayBean arrayBeanEpidemicThreshold = new ArrayBean();
 		ArrayBean arrayBeanTotalRate1 = new ArrayBean();
-		ArrayBean arrayBeanHiddenHolders1 = new ArrayBean();
-		result.add(arrayBeanHiddenHolders);
+		ArrayBean arrayBeanGraphPrediction = new ArrayBean();
+		result.add(arrayBeanGraph);
 		result.add(arrayBeanTotalRate);
 		result.add(arrayBeanEpidemicThreshold);
 		result.add(arrayBeanTotalRate1);
-		result.add(arrayBeanHiddenHolders1);
+		result.add(arrayBeanGraphPrediction);
 
 		for (int k = firstDay; k <= maxDBDay + predictionDays; ++k) {
-			if (covidStat.getHiddenHolders().containsKey(k)) {
-				if  (k <= maxDBDay - 9) {
-					arrayBeanHiddenHolders.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
-					arrayBeanHiddenHolders.y.add((double) covidStat.getHiddenHolders().get(k));
+			if (graphMap.containsKey(k)) {
+				if  (k <= graphPredictionStartDay) {
+					arrayBeanGraph.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
+					arrayBeanGraph.y.add(graphMap.get(k));
+					LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet(A): x=%d, y=%.2f", k, graphMap.get(k)));
 				} else {
-					arrayBeanHiddenHolders1.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
-					arrayBeanHiddenHolders1.y.add(covidStat.getHiddenHolders().get(k));
+					arrayBeanGraphPrediction.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
+					arrayBeanGraphPrediction.y.add(graphMap.get(k));
+					LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet(B): x=%d, y=%.2f", k, graphMap.get(k)));
 				}
 			}
 			if (covidStat.getTotalInfectionRate().containsKey(k)) {
@@ -138,7 +170,8 @@ public class DynamicsJsonServlet extends HttpServlet {
 		info.population = population;
 //		info.hlast = covidStat.getHiddenHolders().get(Collections.max(covidStat.getHiddenHolders().keySet()));
 		info.hlast = covidStat.getHiddenHolders().get(maxDBDay - 9);
-		info.lastCases = covidStat.getCases().get(Collections.max(covidStat.getCases().keySet()));
+		info.lastCases = covidStat.getCases().get(maxDBDay);
+		info.variableGraphName = variableGraphName;
 
 		info.zeroCases = 0;
 		boolean hasNoZero = false;

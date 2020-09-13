@@ -47,4 +47,16 @@ public class CovidTools {
 	    }
 	    return pattern.matcher(strNum).matches();
 	}
+	
+	public static String getDensityColor(double density) {
+		if (density < 0.2) {
+			return "green";
+		} else if (density < 0.4) {
+			return "orange";
+		} else if (density < 0.8) {
+			return "red";
+		} else {
+			return "black";
+		}
+	}
 }

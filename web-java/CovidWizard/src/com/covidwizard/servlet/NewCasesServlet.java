@@ -45,7 +45,15 @@ public class NewCasesServlet extends HttpServlet {
 		PrintWriter writer = response.getWriter();
 		writer.println("<table border=\"1\">");
 		writer.println("<tbody>");
-		writer.println("<tr><th>Date</th><th>New Cases</th><th>Total Cases</th><th>Hidden Holders</th><th>Infection Rate</th><th>Total Rate (TIR)</th></tr>");
+		writer.println("<tr>"
+				+ "<th>Date</th>"
+				+ "<th>New Cases</th>"
+				+ "<th>Total Cases</th>"
+				+ "<th>Hidden Holders</th>"
+				+ "<th>Infection Rate</th>"
+				+ "<th>Total Rate (TIR)</th>"
+				+ "<th>Transmission Risk</th>"
+				+ "</tr>");
 
 //		List<DataItem> items = dataDao.getDataByCountry(country);
 //		int firstDay = items.get(0).getDay();
@@ -57,19 +65,23 @@ public class NewCasesServlet extends HttpServlet {
 //		}
 		List<DataItem> items = null;
 		int maxDBDay = -1;		// last day in the database
+		long population = -1;
 		if (CovidTools.isNumeric(countryParameter)) {
 			int countryId = Integer.parseInt(countryParameter);
 			Country country = countryDao.get(countryId).get();
 			items = dataDao.getDataByCountry(country);
 			maxDBDay = dataDao.getMaxDay(country);
+			population = country.getPopulation();
 		} else if (countryParameter.equals("all")) {
 			items = dataDao.getWorldData();
 			maxDBDay = dataDao.getWorldMaxDay();
+			population = countryGroupDao.getWorldPopulation().get();
 		} else if (countryParameter.startsWith("gr")) {
 			int groupId = Integer.parseInt(countryParameter.substring(2));
 			CountryGroup countryGroup = countryGroupDao.get(groupId).get();
 			items = dataDao.getGroupData(countryGroup);
 			maxDBDay = dataDao.getGroupMaxDay(countryGroup);
+			population = countryGroupDao.getGroupPopulation(countryGroup).get();
 		} else {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
@@ -81,7 +93,7 @@ public class NewCasesServlet extends HttpServlet {
 			cases.put(item.getDay(), item.getNewCases());
 		}
 
-		CovidStat covidStat = new CovidStat(cases, firstDay, maxDBDay, repair, predictionDays);
+		CovidStat covidStat = new CovidStat(population, cases, firstDay, maxDBDay, repair, predictionDays);
 
 		LOGGER.log(Level.INFO, String.format("NewCasesServlet: predictionDays=%d", predictionDays));
 		boolean hasNoZero = false;
@@ -93,17 +105,22 @@ public class NewCasesServlet extends HttpServlet {
 			double hiddenHolders = covidStat.getHiddenHolders().getOrDefault(k, 0.0);
 			double infectionRate = covidStat.getInfectionRate().getOrDefault(k, 0.0);
 			double totalInfectionRate = covidStat.getTotalInfectionRate().getOrDefault(k, 0.0);
+			double density = covidStat.getDensityList().getOrDefault(k, 0.0);
 			String dayClass = k == maxDBDay ? "tab_today" : "tab_day";
+			String newCasesClass = k <= maxDBDay ? "tab_new_cases_normal" : "tab_new_cases_prediction";
+			String totalCasesClass = k <= maxDBDay ? "tab_total_cases_normal" : "tab_total_cases_prediction";
 			String hiddenHoldersClass = k <= maxDBDay - 9 ? "tab_hh_normal" : "tab_hh_prediction";
 			String infectionRateClass = k <= maxDBDay - 10 ? "tab_ir_normal" : "tab_ir_prediction";
 			String totalInfectionRateClass = k <= maxDBDay - 10 ? "tab_tr_normal" : "tab_tr_prediction";
-			writer.println(String.format("<tr><td>%s</td><td>%s</td><td>%.1f</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+			String densityClass = String.format("density_%s", CovidTools.getDensityColor(density));
+			writer.println(String.format("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
 					String.format("<div id=\"%s\">%s</div>", dayClass, CovidTools.dayToDate(k+1)),
-					hasNoZero ? String.format("%.1f", covidStat.getCases().get(k)) : "?",
-					covidStat.getTotalCases().get(k),
+					String.format("<div class=\"%s\">%s</div>", newCasesClass, hasNoZero ? String.format("%.1f", covidStat.getCases().get(k)) : "?"),
+					String.format("<div class=\"%s\">%.1f</div>", totalCasesClass, covidStat.getTotalCases().get(k)),
 					String.format("<div class=\"%s\">%.1f</div>", hiddenHoldersClass, hiddenHolders),
 					String.format("<div class=\"%s\">%f</div>", infectionRateClass, infectionRate),
-					String.format("<div class=\"%s\">%f</div>", totalInfectionRateClass, totalInfectionRate)));
+					String.format("<div class=\"%s\">%f</div>", totalInfectionRateClass, totalInfectionRate),
+					String.format("<div class=\"%s\">%f</div>", densityClass, density)));
 		}
 		writer.println("</tbody>");
 		writer.println("</table>");

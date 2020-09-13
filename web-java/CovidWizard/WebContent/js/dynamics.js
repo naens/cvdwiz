@@ -1,8 +1,8 @@
-const hidden_virus_holders_index = 0;
+const variable_graph = 0;	// variable graph
 const total_infection_rate_index = 1;
 const epidemic_threshold_index = 2;
 const total_infection_rate_1 = 3;
-const hidden_virus_holders_1 = 4;
+const variable_graph_prediction = 4;		// variable graph prediction
 const info = 5;
 var pdata;
 var playout;
@@ -111,14 +111,15 @@ function round_num(number, digits) {
 	return number.toFixed(digits);;
 }
 
-
 function updateGraphs() {
 	resetDate();
 	var country = document.getElementById("country").value;
 	var repair = getRepair();
 	var prediction = $('#date_prediction').val();
+	var graph  = $('#graph_select1').val();
 
-	$.getJSON(`/dynamics.json?country=${country}&repair=${repair}&prediction=${prediction}`, function(data) {
+	// TODO: pass chosen variable as parameter
+	$.getJSON(`/dynamics.json?country=${country}&repair=${repair}&prediction=${prediction}&graph=${graph}`, function(data) {
 		var data_line = {
 			shape: "spline",
 			smoothing: 1.3,
@@ -143,59 +144,61 @@ function updateGraphs() {
 			$('#new_cases_field').html(s);
 		}
 		pdata = data;
-		var hh_len = pdata[hidden_virus_holders_index].x.length;
-		if (data[hidden_virus_holders_index].y[hh_len - 1] < data[hidden_virus_holders_index].y[hh_len - 2]) {
+		var hh_len = pdata[variable_graph].x.length;
+		if (data[variable_graph].y[hh_len - 1] < data[variable_graph].y[hh_len - 2]) {
 			$('#arrow').html("&#9660;")
-		} else if (data[hidden_virus_holders_index].y[hh_len - 1] > data[hidden_virus_holders_index].y[hh_len - 2]) {
+		} else if (data[variable_graph].y[hh_len - 1] > data[variable_graph].y[hh_len - 2]) {
 			$('#arrow').html("&#9650;")
 		} else {
 			$('#arrow').html("&#8226;")
 		}
-		lastDate = new Date(pdata[hidden_virus_holders_1].x[pdata[hidden_virus_holders_1].x.length - 1]);
-		data[hidden_virus_holders_index].line = Object.assign({}, data_line);
+		lastDate = new Date(pdata[total_infection_rate_1].x[pdata[total_infection_rate_1].x.length - 1]);
+		data[variable_graph].line = Object.assign({}, data_line);
 		data[total_infection_rate_index].line = Object.assign({}, data_line);
 		data[epidemic_threshold_index].line = Object.assign({}, data_line);
 		data[total_infection_rate_1].line = Object.assign({}, data_line);
-		data[hidden_virus_holders_1].line = Object.assign({}, data_line);
+		data[variable_graph_prediction].line = Object.assign({}, data_line);
 
-		data[hidden_virus_holders_index].line.color = 'blue';
+		data[variable_graph].line.color = 'blue';
 		data[total_infection_rate_index].line.color = 'red';
 		data[epidemic_threshold_index].line.color = 'black';
 		data[total_infection_rate_1].line.color = 'green';
-		data[hidden_virus_holders_1].line.color = 'orange';
+		data[variable_graph_prediction].line.color = 'orange';
 
-		data[hidden_virus_holders_index].type = 'scatter';
+		data[variable_graph].type = 'scatter';
 		data[total_infection_rate_index].type = 'scatter';
 		data[epidemic_threshold_index].type = 'scatter';
 		data[total_infection_rate_1].type = 'scatter';
-		data[hidden_virus_holders_1].type = 'scatter';
+		data[variable_graph_prediction].type = 'scatter';
 
-		data[hidden_virus_holders_index].mode = 'lines+markers';
+		data[variable_graph].mode = 'lines+markers';
 		data[total_infection_rate_index].mode = 'lines+markers';
 		data[total_infection_rate_1].mode = 'lines+markers';
-		data[hidden_virus_holders_1].mode = 'lines+markers';
+		data[variable_graph_prediction].mode = 'lines+markers';
 
-		data[hidden_virus_holders_index].name = 'Hidden Virus Holders (HVH)';
+//		data[variable_graph].name = 'Hidden Virus Holders (HVH)';
+		data[variable_graph].name = data[info].variableGraphName;
 		data[total_infection_rate_index].name = 'Total Infection Rate (TIR)';
 		data[epidemic_threshold_index].name = 'Epidemic Threshold TIR = 1';
 		data[total_infection_rate_1].name = 'Prediction for TIR';
-		data[hidden_virus_holders_1].name = 'Prediction for HVH';
+		data[variable_graph_prediction].name = 'Prediction for ' + data[info].variableGraphName;
 
 		data[total_infection_rate_index].yaxis = 'y2';
 		data[epidemic_threshold_index].yaxis = 'y3';
 		data[total_infection_rate_1].yaxis = 'y4';
-		data[hidden_virus_holders_1].yaxis = 'y5';
+		data[variable_graph_prediction].yaxis = 'y5';
 
 		data[epidemic_threshold_index].hoverinfo = 'skip';
 		plot = document.getElementById('plot');
 		color1 = 'green';
 		color2 = 'black';
-		var todayDateString = data[hidden_virus_holders_1].x[8];
+		var todayDateString = data[total_infection_rate_1].x[9];
 		var todayDate = new Date(todayDateString);
 		var x_range = [$('#date_from').val(), getDateString(lastDate)];
 		var ys = maxValues(data, x_range[0], x_range[1]);
 		var y_range = [0, ys[0] * 1.05];
 		var y2_range = [0, ys[1] * 1.05];
+		// TODO: variable graph colors
 		var layout = {
 			margin: { t: 0 },
 			legend: {
@@ -286,8 +289,8 @@ function updateGraphs() {
 		plot.on('plotly_relayout',
 			function(eventdata) {
 				if (eventdata['xaxis.autorange']) {
-					var ys = maxValues(data, pdata[hidden_virus_holders_index].x[0],
-						pdata[hidden_virus_holders_index].x[pdata[hidden_virus_holders_index].x.length - 1]);
+					var ys = maxValues(data, pdata[variable_graph].x[0],
+						pdata[variable_graph].x[pdata[variable_graph].x.length - 1]);
 					var y_range = [0, ys[0] * 1.05];
 					var y2_range = [0, ys[1] * 1.05];
 					var update = {
@@ -299,8 +302,8 @@ function updateGraphs() {
 						'xaxis.dtick': 86400000.0 * 7
 					};
 					Plotly.relayout(plot, update)
-					var date_from = new Date(pdata[hidden_virus_holders_index].x[0]);
-					var date_to = new Date(pdata[hidden_virus_holders_index].x[pdata[hidden_virus_holders_index].x.length - 1]);
+					var date_from = new Date(pdata[variable_graph].x[0]);
+					var date_to = new Date(pdata[variable_graph].x[pdata[variable_graph].x.length - 1]);
 					setDate('#date_from', date_from);
 					setDate('#date_to', date_to);
 				}
@@ -381,8 +384,8 @@ function getMaxYDates(data, n, x_from, x_to) {
 }
 
 function maxValues(data, x_from, x_to) {
-	var yhh_max = getMaxYDates(data, hidden_virus_holders_index, x_from, x_to);
-	var max_hvh_1 = getMaxY(data, hidden_virus_holders_1);
+	var yhh_max = getMaxYDates(data, variable_graph, x_from, x_to);
+	var max_hvh_1 = getMaxY(data, variable_graph_prediction);
 	if (max_hvh_1 > yhh_max) {
 		yhh_max = max_hvh_1;
 	}
@@ -407,6 +410,10 @@ function onDateChange() {
 }
 
 function onPredictionDateChange() {
+	updateGraphs();
+}
+
+function onGraphSelect() {
 	updateGraphs();
 }
 
