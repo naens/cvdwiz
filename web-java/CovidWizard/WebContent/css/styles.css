@@ -264,6 +264,16 @@ p {
 	display: inline;
 }
 
+#average_density {
+	display: inline;
+	padding-left: 160px;
+}
+
+#average_density_field {
+	display: inline;
+	font-weight: bold;
+}
+
 #density_total_size {
 	display: inline;
 }

@@ -64,42 +64,52 @@ public class DynamicsJsonServlet extends HttpServlet {
 //		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: predictionString=\"%s\"", predictionString));
 		String graph = request.getParameter("graph");
 
-		List<DataItem> items = null;
-		int maxDBDay = -1;			// maximum day in the database
-		long population = -1;
+//		List<DataItem> items = null;
+//		int maxDBDay = -1;			// maximum day in the database
+//		long population = -1;
+		CovidStat covidStat = null;
+		Integer predictionDays = predictionString.isEmpty() ? null : CovidTools.dateToDay(predictionString);
 		if (CovidTools.isNumeric(countryParameter)) {
 			int countryId = Integer.parseInt(countryParameter);
 			Country country = countryDao.get(countryId).get();
-			items = dataDao.getDataByCountry(country);
-			maxDBDay = dataDao.getMaxDay(country);
-			population = country.getPopulation();
+			//items = dataDao.getDataByCountry(country);
+			//maxDBDay = dataDao.getMaxDay(country);
+			//population = country.getPopulation();
+			LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: country=%s", country.getName()));
+			covidStat = CovidStat.make(country, repair, predictionDays);
 		} else if (countryParameter.equals("all")) {
-			items = dataDao.getWorldData();
-			maxDBDay = dataDao.getWorldMaxDay();
-			population = countryGroupDao.getWorldPopulation().get();
+			//items = dataDao.getWorldData();
+			//maxDBDay = dataDao.getWorldMaxDay();
+			//population = countryGroupDao.getWorldPopulation().get();
+			covidStat = CovidStat.make(repair, predictionDays);
+			LOGGER.log(Level.INFO, "DynamicsJsonServlet: country=all");
 		} else if (countryParameter.startsWith("gr")) {
 			int groupId = Integer.parseInt(countryParameter.substring(2));
 			CountryGroup countryGroup = countryGroupDao.get(groupId).get();
-			items = dataDao.getGroupData(countryGroup);
-			maxDBDay = dataDao.getGroupMaxDay(countryGroup);
-			population = countryGroupDao.getGroupPopulation(countryGroup).get();
+			//items = dataDao.getGroupData(countryGroup);
+			//maxDBDay = dataDao.getGroupMaxDay(countryGroup);
+			//population = countryGroupDao.getGroupPopulation(countryGroup).get();
+			covidStat = CovidStat.make(countryGroup, repair, predictionDays);
+			LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: country_group=%s", countryGroup.getName()));
 		} else {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
-		int predictionDays = predictionString.isEmpty() ? 0 : CovidTools.dateToDay(predictionString) - maxDBDay;
-		int firstDay = items.get(0).getDay();
-		Map<Integer, Double> cases = new HashMap<Integer, Double>();
-		for (int i = 0; i < items.size(); ++i) {
-			DataItem item = items.get(i);
-			cases.put(item.getDay(), item.getNewCases());
-		}
+		//int firstDay = items.get(0).getDay();
+		int firstDay = covidStat.getFirstDay();
+		int maxDBDay = covidStat.getMaxDBDay();
+		int lastDay = covidStat.getLastDay();
+//		Map<Integer, Double> cases = new HashMap<Integer, Double>();
+//		for (int i = 0; i < items.size(); ++i) {
+//			DataItem item = items.get(i);
+//			cases.put(item.getDay(), item.getNewCases());
+//		}
 
-		CovidStat covidStat = new CovidStat(population, cases, firstDay, maxDBDay, repair, predictionDays);
+		// covidStat = new CovidStat(population, cases, firstDay, maxDBDay, repair, predictionDays);
 
 		Map<Integer, Double> graphMap = null;
 		int graphPredictionStartDay = -1;
 		String variableGraphName = null;
-		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: graph=%s", graph));
+//		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: graph=%s", graph));
 		switch (graph) {
 		case "hidden_holders":
 			variableGraphName = "Hidden Holders";
@@ -118,7 +128,8 @@ public class DynamicsJsonServlet extends HttpServlet {
 			break;
 		case "trisk":
 			variableGraphName = "TRisk";
-			graphPredictionStartDay = maxDBDay + predictionDays;
+//			graphPredictionStartDay = maxDBDay + predictionDays;
+			graphPredictionStartDay = maxDBDay  - 9;
 			graphMap = covidStat.getDensityList();
 			break;
 		default:
@@ -133,21 +144,21 @@ public class DynamicsJsonServlet extends HttpServlet {
 		ArrayBean arrayBeanTotalRate1 = new ArrayBean();
 		ArrayBean arrayBeanGraphPrediction = new ArrayBean();
 		result.add(arrayBeanGraph);
+		result.add(arrayBeanGraphPrediction);
 		result.add(arrayBeanTotalRate);
 		result.add(arrayBeanEpidemicThreshold);
 		result.add(arrayBeanTotalRate1);
-		result.add(arrayBeanGraphPrediction);
 
-		for (int k = firstDay; k <= maxDBDay + predictionDays; ++k) {
+		for (int k = firstDay; k <= lastDay; ++k) {
 			if (graphMap.containsKey(k)) {
 				if  (k <= graphPredictionStartDay) {
 					arrayBeanGraph.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
 					arrayBeanGraph.y.add(graphMap.get(k));
-					LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet(A): x=%d, y=%.2f", k, graphMap.get(k)));
+//					LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet(A): x=%d, y=%.2f", k, graphMap.get(k)));
 				} else {
 					arrayBeanGraphPrediction.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
 					arrayBeanGraphPrediction.y.add(graphMap.get(k));
-					LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet(B): x=%d, y=%.2f", k, graphMap.get(k)));
+//					LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet(B): x=%d, y=%.2f", k, graphMap.get(k)));
 				}
 			}
 			if (covidStat.getTotalInfectionRate().containsKey(k)) {
@@ -164,10 +175,10 @@ public class DynamicsJsonServlet extends HttpServlet {
 			arrayBeanEpidemicThreshold.x.add(CovidTools.dayToDate(k+1));	// +1 day fix
 			arrayBeanEpidemicThreshold.y.add(1.0);
 		}
-		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: lastDay=%d", maxDBDay));
+//		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: lastDay=%d", maxDBDay));
 
 		Info info = new Info();
-		info.population = population;
+		info.population = covidStat.getPopulation();
 //		info.hlast = covidStat.getHiddenHolders().get(Collections.max(covidStat.getHiddenHolders().keySet()));
 		info.hlast = covidStat.getHiddenHolders().get(maxDBDay - 9);
 		info.lastCases = covidStat.getCases().get(maxDBDay);

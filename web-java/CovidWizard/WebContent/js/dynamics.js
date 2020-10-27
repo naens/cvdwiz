@@ -1,8 +1,8 @@
 const variable_graph = 0;	// variable graph
-const total_infection_rate_index = 1;
-const epidemic_threshold_index = 2;
-const total_infection_rate_1 = 3;
-const variable_graph_prediction = 4;		// variable graph prediction
+const variable_graph_prediction = 1;		// variable graph prediction
+const total_infection_rate_index = 2;
+const epidemic_threshold_index = 3;
+const total_infection_rate_1 = 4;
 const info = 5;
 var pdata;
 var playout;
@@ -20,27 +20,30 @@ function onCountrySelect() {
 	$('#repair').val('restore');
 	$('#repair_button').html('Repair');
 	updateGraphs();
+	$('#country_group').val('all');
 }
 
 function onCountryGroupSelect() {
 	updateDensityTable();
 }
 
-function getDensityColor(density) {
-	if (density < 0.2) {
+function getDensityColor(density_tr, density_a) {
+	if (density_tr < density_a * 2/4) {
 		return "green";
-	} else if (density < 0.4) {
+	} else if (density_tr < density_a * 5/4) {
 		return "orange";
-	} else if (density < 0.8) {
+	} else if (density_tr < density_a * 8/4) {
 		return "red";
 	} else {
 		return "black";
 	}
 }
 
-function makeDensityTable(header, rows) {
+function makeDensityTable(header, rows, density_a) {
 	var table = document.createElement('table');
 	var tableBody = document.createElement('tbody');
+	//var density_a = g_average_density; //1000 * pdata[info].hlast / pdata[info].population;
+	//alert("density_a=" + g_average_density);
 
 	table.border = 1;
 
@@ -69,7 +72,7 @@ function makeDensityTable(header, rows) {
 				container.className = "density_country_name";
 			}
 			if (i > 0) {
-				container.style.color = getDensityColor(rowData[2]);
+				container.style.color = getDensityColor(rowData[2], density_a);
 			}
 			cell.appendChild(container);
 			row.appendChild(cell);
@@ -94,7 +97,7 @@ function updateDensityTable() {
 	var country = document.getElementById("country").value;
 	var countryGroup = document.getElementById("country_group").value;
 	$.getJSON(`/density.json?country=${country}&country_group=${countryGroup}`, function(data) {
-		$('#density_table').html(makeDensityTable(data.header, data.rows));
+		$('#density_table').html(makeDensityTable(data.header, data.rows, data.averageDensity));
 		if (typeof data.rank !== 'undefined') {
 			$('#density_table_field').html(data.rank);
 			$('#density_total_size').html(data.length);
@@ -102,6 +105,9 @@ function updateDensityTable() {
 			$('#density_table_field').html('');
 			$('#density_total_size').html(data.length);
 		}
+		//alert(g_average_density);
+		$('#average_density_field').html(round_num(data.averageDensity, 3));
+		$('#average_density_field').css('color', getDensityColor(data.averageDensity));
 	});
 
 }
@@ -176,7 +182,6 @@ function updateGraphs() {
 		data[total_infection_rate_1].mode = 'lines+markers';
 		data[variable_graph_prediction].mode = 'lines+markers';
 
-//		data[variable_graph].name = 'Hidden Virus Holders (HVH)';
 		data[variable_graph].name = data[info].variableGraphName;
 		data[total_infection_rate_index].name = 'Total Infection Rate (TIR)';
 		data[epidemic_threshold_index].name = 'Epidemic Threshold TIR = 1';

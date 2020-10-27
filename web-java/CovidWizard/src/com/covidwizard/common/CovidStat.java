@@ -13,19 +13,21 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.covidwizard.dao.CountryDao;
+import com.covidwizard.dao.CountryGroupDao;
 import com.covidwizard.dao.DataDao;
 import com.covidwizard.model.Country;
+import com.covidwizard.model.CountryGroup;
 import com.covidwizard.model.DataItem;
 
 public class CovidStat {
 
-	@SuppressWarnings("unused")
 	private static final Logger LOGGER = Logger.getLogger(Country.class.getName());
 
 	private static List<Country> countryList = new LinkedList<Country>();
 	private static Map<Country, Double> densityMap = new HashMap<Country, Double>();
 	private static DataDao dataDao = new DataDao();
 	private static CountryDao countryDao = new CountryDao();
+	private static CountryGroupDao countryGroupDao = new CountryGroupDao();
 
 	static {
 		Collection<Country> countries = countryDao.getAll();
@@ -57,12 +59,43 @@ public class CovidStat {
 		fillArrays(repair);
 	}
 
+	private static CovidStat make(long population, List<DataItem> items, int firstDay, int maxDBDay, boolean repair, Integer predictionDays) {
+		// Integer predictionDays = predictionString.isEmpty() ? 0 : CovidTools.dateToDay(predictionString) - maxDBDay;
+		Map<Integer, Double> cases = new HashMap<Integer, Double>();
+		for (int i = 0; i < items.size(); ++i) {
+			DataItem item = items.get(i);
+			cases.put(item.getDay(), item.getNewCases());
+		}
+		return new CovidStat(population, cases, firstDay, maxDBDay, repair, predictionDays != null ? predictionDays - maxDBDay : 0);
+		
+	}
+
+	public static CovidStat make(Country country, boolean repair, Integer predictionDays) {
+		long population = country.getPopulation();
+		List<DataItem> items = dataDao.getDataByCountry(country);
+		int firstDay = items.get(0).getDay();
+		int maxDBDay = dataDao.getMaxDay(country);
+		return CovidStat.make(population, items, firstDay, maxDBDay, repair, predictionDays);
+	}
+
+	public static CovidStat make(CountryGroup countryGroup, boolean repair, Integer predictionDays) {
+		long population = countryGroupDao.getGroupPopulation(countryGroup).get();
+		List<DataItem> items = dataDao.getGroupData(countryGroup);
+		int firstDay = items.get(0).getDay();
+		int maxDBDay = dataDao.getGroupMaxDay(countryGroup);
+		return CovidStat.make(population, items, firstDay, maxDBDay, repair, predictionDays);
+	}
+
+	public static CovidStat make(boolean repair, Integer predictionDays) {			// for the world
+		long population = countryGroupDao.getWorldPopulation().get();
+		List<DataItem> items = dataDao.getWorldData();
+		int firstDay = items.get(0).getDay();
+		int maxDBDay = dataDao.getWorldMaxDay();
+		return CovidStat.make(population, items, firstDay, maxDBDay, repair, predictionDays);
+	}
+
 	private void fixNegative() {
 		double s = 0;
-//		Map<Integer, Double> casesOld = new HashMap<Integer, Double>();
-//		for (Entry<Integer, Double> entry : cases.entrySet()) {
-//			casesOld.put(entry.getKey(), entry.getValue());
-//		}
 		for (int k = firstDay; k <= maxDBDay; ++k) {
 			double s1 = s + cases.getOrDefault(k, 0.0);
 			if (cases.getOrDefault(k, 0.0) < 0.0) {
@@ -85,10 +118,6 @@ public class CovidStat {
 	private void repair() {
 		final double drop = 3.0;
 		double alevel = 0;
-//		Map<Integer, Double> casesOld = new HashMap<Integer, Double>();
-//		for (Entry<Integer, Double> entry : cases.entrySet()) {
-//			casesOld.put(entry.getKey(), entry.getValue());
-//		}
 		for (int k = firstDay; k <= maxDBDay; ++k) {
 			int k2 = k;
 			double s = 0;
@@ -101,22 +130,14 @@ public class CovidStat {
 				if (k2 <= maxDBDay) {
 					s += cases.getOrDefault(k2, 0.0);
 					double newLevel = s / (k2 - k1 + 1);
-//					LOGGER.log(Level.INFO, String.format("repair: new level = %.1f (=%.1f / %d)", newLevel, s, (k2 - k1 + 1)));
 					for (int kk = k1; kk <= k2; ++kk) {
 						cases.put(kk, newLevel);
 					}
-//					cases.put(k2, s - (k2 - k1) * newLevel);
 					k = k2;
 				}
 			}
 			alevel = cases.getOrDefault(k2, 0.0) / drop;
 		}
-//		for (int k = firstDay; k <= lastDay; ++k) {
-////			if (Math.abs(casesOld.getOrDefault(k, 0.0) - cases.getOrDefault(k, 0.0)) > 0.0001) {
-//				LOGGER.log(Level.INFO, String.format("repair: k=%d %2f -> %2f", k, casesOld.getOrDefault(k, 0.0),
-//						cases.getOrDefault(k, 0.0)));
-////			}
-//		}
 	}
 
 	private void fillTotalCases() {
@@ -148,7 +169,6 @@ public class CovidStat {
 				double h = hiddenHolders.get(k);
 				if (cases.containsKey(k + 10) && h > 0.0) {
 					infectionRate.put(k, (cases.get(k + 10)) / h);
-//					LOGGER.log(Level.INFO, String.format("k=%d, ir=%f", k, infectionRate.get(k)));
 				}
 			}
 		}
@@ -174,13 +194,9 @@ public class CovidStat {
 				if (infectionRate.containsKey(k - i)) {
 					a = infectionRate.get(k - i);
 				}
-//				LOGGER.log(Level.INFO, String.format("k=%d, i=%d, k-i=%d, a=%f", k, i, k-i, a));
 				s += a;
 			}
 			infectionRate.put(k, s / 10);
-//			if (k >= maxDBDay) {
-//				LOGGER.log(Level.INFO, String.format("fillInfectionRatePrediction: k=%d, infectionRate=%f", k, infectionRate.get(k)));
-//			}
 		}
 	}
 
@@ -193,12 +209,8 @@ public class CovidStat {
 					g = infectionRate.get(k - i);
 				}
 				G += g;
-//				LOGGER.log(Level.INFO, String.format("k=%d, g=%f", k, g));
 			}
 			totalInfectionRate.put(k, G);
-//			if (k >= maxDBDay) {
-//				LOGGER.log(Level.INFO, String.format("fillTotalInfectionRatePrediction: k=%d, totalInfectionRate=%f", k, totalInfectionRate.get(k)));
-//			}
 		}
 	}
 
@@ -217,9 +229,6 @@ public class CovidStat {
 				s += (g * h);
 			}
 			hiddenHolders.put(k, s);
-//			if (k >= maxDBDay) {
-//				LOGGER.log(Level.INFO, String.format("fillHiddenHoldersPrediciton: k=%d: %s", k, hiddenHolders.get(k)));
-//			}
 		}
 
 	}
@@ -230,20 +239,16 @@ public class CovidStat {
 				double td = totalCases.get(k - 1);
 				double g = infectionRate.get(k - 10);
 				totalCases.put(k, td + g * (td - totalCases.get(k - 11)));
-//				LOGGER.log(Level.INFO, String.format("fillTotalCasesPrediction: k=%d, totalCases=%f", k, totalCases.get(k)));
 			}
 		}
 	}
 
 	private void fillCasesPrediction() {
-//		LOGGER.log(Level.INFO, String.format("fillCasesPrediction A"));
 		for (int k = maxDBDay + 1; k <= maxDBDay + predictionDays; ++k) {
 			if (totalCases.containsKey(k) && totalCases.containsKey(k - 1)) {
 				cases.put(k, totalCases.get(k) - totalCases.get(k - 1));
-//				LOGGER.log(Level.INFO, String.format("fillCasesPrediction: k=%d, cases=%f", k, cases.get(k)));
 			}
 		}
-//		LOGGER.log(Level.INFO, String.format("fillCasesPrediction B"));
 	}
 
 	private void fillDensityList() {
@@ -297,10 +302,6 @@ public class CovidStat {
 		return densityList;
 	}
 
-//	public Map<Integer, Double> getSum() {
-//		return sum;
-//	}
-
 	public static void clearDensities() {
 		densityMap.clear();
 	}
@@ -308,8 +309,6 @@ public class CovidStat {
 	private double getDensity(Country country) {
 		if (!getHiddenHolders().isEmpty()) {
 			long population = country.getPopulation();
-//			int maxDay = Collections.max(getHiddenHolders().keySet());
-	//		LOGGER.log(Level.INFO, String.format("getDensity: maxDay=%d", maxDay));
 			double hlast = getHiddenHolders().get(maxDBDay - 9);
 			return 1000.0 * hlast / population;
 		} else {
@@ -320,10 +319,8 @@ public class CovidStat {
 
 	// calculate the density for the country
 	private static double getCountryDensity(Country country) {
-//		LOGGER.log(Level.INFO, String.format("CovidStat: getCountryDensity for %s(%d)", country.getName(), country.getId()));
 		int firstDay = dataDao.getFirstDay(country);
 		int maxDay = dataDao.getMaxDay(country);
-//		LOGGER.log(Level.INFO, String.format("getCountryDensity: country=%s(%d), firstDay=%d, lastDay=%d", country.getName(), country.getId(), firstDay, lastDay));
 
 		List<DataItem> items = dataDao.getDataByCountry(country);
 		Map<Integer, Double> cases = new HashMap<Integer, Double>();
@@ -355,7 +352,7 @@ public class CovidStat {
 			fillDensities();
 		}
 
-		List<Entry<Country, Double>> list = new ArrayList<>(densityMap.entrySet());
+		List<Entry<Country, Double>> list = new ArrayList<Entry<Country, Double>>(densityMap.entrySet());
 		list.sort(Entry.comparingByValue(new Comparator<Double>() {
 
 			@Override
@@ -370,6 +367,22 @@ public class CovidStat {
 		}
 
 		return result;
+	}
+
+	public int getFirstDay() {
+		return firstDay;
+	}
+
+	public int getLastDay() {
+		return firstDay + maxDBDay;
+	}
+
+	public int getMaxDBDay() {
+		return maxDBDay;
+	}
+
+	public long getPopulation() {
+		return population;
 	}
 
 }

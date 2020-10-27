@@ -27,7 +27,6 @@ import com.covidwizard.model.DataItem;
 public class NewCasesServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 7828134101123495298L;
-	@SuppressWarnings("unused")
 	private static final Logger LOGGER = Logger.getLogger(Country.class.getName());
 
 	private static CountryDao countryDao = new CountryDao();
@@ -55,14 +54,7 @@ public class NewCasesServlet extends HttpServlet {
 				+ "<th>Transmission Risk</th>"
 				+ "</tr>");
 
-//		List<DataItem> items = dataDao.getDataByCountry(country);
-//		int firstDay = items.get(0).getDay();
-//		int lastDay = dataDao.getLastDay(country);
-//		Map<Integer, Integer> cases = new HashMap<Integer, Integer>();
-//		for (int i = 0; i < items.size(); ++i) {
-//			DataItem item = items.get(i);
-//			cases.put(item.getDay(), item.getNewCases());
-//		}
+
 		List<DataItem> items = null;
 		int maxDBDay = -1;		// last day in the database
 		long population = -1;

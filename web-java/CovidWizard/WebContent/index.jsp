@@ -123,10 +123,13 @@
 					<option value="${countryGroup.id}">${countryGroup.name}</option>
 				</c:forEach>
 			</select>
+			<div id="average_density">
+				Average: 
+				<div id="average_density_field"></div>
+			</div>
 			<script> $('#country_group').val('all'); </script>
 			<div id="density_table"></div>
 		</div>
-
 		<div id="buttons">
 			<input type="hidden" id="repair" name="repair" value="restore"/>
 			<button id="repair_button" type="button" onclick="repairClick()">Repair</button>
