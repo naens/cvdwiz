@@ -3,8 +3,6 @@ package com.covidwizard.servlet;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,10 +17,8 @@ import com.covidwizard.common.CovidStat;
 import com.covidwizard.common.CovidTools;
 import com.covidwizard.dao.CountryDao;
 import com.covidwizard.dao.CountryGroupDao;
-import com.covidwizard.dao.DataDao;
 import com.covidwizard.model.Country;
 import com.covidwizard.model.CountryGroup;
-import com.covidwizard.model.DataItem;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -34,7 +30,6 @@ public class DynamicsJsonServlet extends HttpServlet {
     static final Logger LOGGER = Logger.getLogger(Country.class.getName());
 
 	private static CountryDao countryDao = new CountryDao();
-	private static DataDao dataDao = new DataDao();
 	private static CountryGroupDao countryGroupDao = new CountryGroupDao();
 
 	class ArrayBean {
@@ -53,7 +48,6 @@ public class DynamicsJsonServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-//        LOGGER.log(Level.INFO, "DynamicsJsonServlet");
 		PrintWriter out = response.getWriter();
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
@@ -61,55 +55,34 @@ public class DynamicsJsonServlet extends HttpServlet {
 		String countryParameter = request.getParameter("country");
 		boolean repair = request.getParameter("repair").equals("repair");
 		String predictionString = request.getParameter("prediction");
-//		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: predictionString=\"%s\"", predictionString));
 		String graph = request.getParameter("graph");
 
-//		List<DataItem> items = null;
-//		int maxDBDay = -1;			// maximum day in the database
-//		long population = -1;
 		CovidStat covidStat = null;
 		Integer predictionDays = predictionString.isEmpty() ? null : CovidTools.dateToDay(predictionString);
 		if (CovidTools.isNumeric(countryParameter)) {
 			int countryId = Integer.parseInt(countryParameter);
 			Country country = countryDao.get(countryId).get();
-			//items = dataDao.getDataByCountry(country);
-			//maxDBDay = dataDao.getMaxDay(country);
-			//population = country.getPopulation();
 			LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: country=%s", country.getName()));
 			covidStat = CovidStat.make(country, repair, predictionDays);
 		} else if (countryParameter.equals("all")) {
-			//items = dataDao.getWorldData();
-			//maxDBDay = dataDao.getWorldMaxDay();
-			//population = countryGroupDao.getWorldPopulation().get();
 			covidStat = CovidStat.make(repair, predictionDays);
 			LOGGER.log(Level.INFO, "DynamicsJsonServlet: country=all");
 		} else if (countryParameter.startsWith("gr")) {
 			int groupId = Integer.parseInt(countryParameter.substring(2));
 			CountryGroup countryGroup = countryGroupDao.get(groupId).get();
-			//items = dataDao.getGroupData(countryGroup);
-			//maxDBDay = dataDao.getGroupMaxDay(countryGroup);
-			//population = countryGroupDao.getGroupPopulation(countryGroup).get();
 			covidStat = CovidStat.make(countryGroup, repair, predictionDays);
 			LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: country_group=%s", countryGroup.getName()));
 		} else {
 			throw new RuntimeException("DynamicsJsonServlet: unknown country parameter");
 		}
-		//int firstDay = items.get(0).getDay();
+
 		int firstDay = covidStat.getFirstDay();
 		int maxDBDay = covidStat.getMaxDBDay();
 		int lastDay = covidStat.getLastDay();
-//		Map<Integer, Double> cases = new HashMap<Integer, Double>();
-//		for (int i = 0; i < items.size(); ++i) {
-//			DataItem item = items.get(i);
-//			cases.put(item.getDay(), item.getNewCases());
-//		}
-
-		// covidStat = new CovidStat(population, cases, firstDay, maxDBDay, repair, predictionDays);
 
 		Map<Integer, Double> graphMap = null;
 		int graphPredictionStartDay = -1;
 		String variableGraphName = null;
-//		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: graph=%s", graph));
 		switch (graph) {
 		case "hidden_holders":
 			variableGraphName = "Hidden Holders";
@@ -128,7 +101,6 @@ public class DynamicsJsonServlet extends HttpServlet {
 			break;
 		case "trisk":
 			variableGraphName = "TRisk";
-//			graphPredictionStartDay = maxDBDay + predictionDays;
 			graphPredictionStartDay = maxDBDay  - 9;
 			graphMap = covidStat.getDensityList();
 			break;
@@ -154,11 +126,9 @@ public class DynamicsJsonServlet extends HttpServlet {
 				if  (k <= graphPredictionStartDay) {
 					arrayBeanGraph.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
 					arrayBeanGraph.y.add(graphMap.get(k));
-//					LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet(A): x=%d, y=%.2f", k, graphMap.get(k)));
 				} else {
 					arrayBeanGraphPrediction.x.add(CovidTools.dayToDate(k+1));		// +1 day fix
 					arrayBeanGraphPrediction.y.add(graphMap.get(k));
-//					LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet(B): x=%d, y=%.2f", k, graphMap.get(k)));
 				}
 			}
 			if (covidStat.getTotalInfectionRate().containsKey(k)) {
@@ -175,11 +145,9 @@ public class DynamicsJsonServlet extends HttpServlet {
 			arrayBeanEpidemicThreshold.x.add(CovidTools.dayToDate(k+1));	// +1 day fix
 			arrayBeanEpidemicThreshold.y.add(1.0);
 		}
-//		LOGGER.log(Level.INFO, String.format("DynamicsJsonServlet: lastDay=%d", maxDBDay));
 
 		Info info = new Info();
 		info.population = covidStat.getPopulation();
-//		info.hlast = covidStat.getHiddenHolders().get(Collections.max(covidStat.getHiddenHolders().keySet()));
 		info.hlast = covidStat.getHiddenHolders().get(maxDBDay - 9);
 		info.lastCases = covidStat.getCases().get(maxDBDay);
 		info.variableGraphName = variableGraphName;
@@ -201,7 +169,6 @@ public class DynamicsJsonServlet extends HttpServlet {
 		}
 		jsonArray.add(gson.toJsonTree(info));
 
-//		String resultJsonString = gson.toJson(result);
 		String resultJsonString = gson.toJson(jsonArray);
 		out.print(resultJsonString);
 		out.flush();

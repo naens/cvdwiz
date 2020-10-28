@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.covidwizard.common.CovidStat;
 import com.covidwizard.common.CovidTools;
-import com.covidwizard.dao.CountryDao;
 import com.covidwizard.dao.CountryGroupDao;
 import com.covidwizard.dao.DataDao;
 import com.covidwizard.model.Country;
@@ -29,9 +28,7 @@ import com.google.gson.Gson;
 public class DensityServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 364554604663779284L;
-	@SuppressWarnings("unused")
 	private static final Logger LOGGER = Logger.getLogger(Country.class.getName());
-	private static CountryDao countryDao = new CountryDao();
 	private static DataDao dataDao = new DataDao();
 	private static CountryGroupDao countryGroupDao = new CountryGroupDao();
 
@@ -52,10 +49,8 @@ public class DensityServlet extends HttpServlet {
 		if (CovidTools.isNumeric(countryParameter)) {
 			countryId = Integer.parseInt(countryParameter);
 		}
-//		Country country = countryDao.get(countryId).get();
 		String countryGroupString = request.getParameter("country_group");
 		Set<Country> countryGroupSet = null;
-//		LOGGER.log(Level.INFO, String.format("DENSITY_SERVLET: countryGroupString: %s", countryGroupString));
 		long population;
 		int maxDBDay;
 		CovidStat covidStat = null;
@@ -63,8 +58,6 @@ public class DensityServlet extends HttpServlet {
 			int countryGroupId = Integer.parseInt(request.getParameter("country_group"));
 			CountryGroup countryGroup = countryGroupDao.get(countryGroupId).get();
 			countryGroupSet = countryGroupDao.getCountryGroupCountries(countryGroupId);
-//			LOGGER.log(Level.INFO, String.format("DENSITY_SERVLET: found %d countries in group %d",
-//					countryGroupSet.size(), countryGroupId));
 			population =  countryGroupDao.getGroupPopulation(countryGroup).get();
 			maxDBDay = dataDao.getGroupMaxDay(countryGroup);
 			covidStat = CovidStat.make(countryGroup, false, 0);
@@ -91,15 +84,12 @@ public class DensityServlet extends HttpServlet {
 		
 
 		int i = 1;
-		double hiddenHolders = 0;
 		for (Entry<Country, Double> entry : densities.entrySet()) {
 			String number = Integer.toString(i);
 			String countryName = entry.getKey().getName();
 			String density = String.format("%6f", entry.getValue());
 			if (countryGroupSet == null || countryGroupSet.contains(entry.getKey())) {
-//				LOGGER.log(Level.INFO, String.format("DENSITY_SERVLET: adding country: %s", entry.getKey().getName()));
 				data.rows.add(new ArrayList<String>(Arrays.asList(number, countryName, density)));
-				// TODO: hiddenHolders += CovidStat.getHiddenHolders(entry.getKey());
 			}
 			if (countryId != null && entry.getKey().getId() == countryId) {
 				data.rank = i;
@@ -107,7 +97,6 @@ public class DensityServlet extends HttpServlet {
 			++i;
 		}
 
-		// TODO: unify with DynamicsJsonServlet??
 		double hlast =  covidStat.getHiddenHolders().get(maxDBDay - 9);
 		data.averageDensity = 1000 * hlast / population;
 
