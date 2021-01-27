@@ -470,7 +470,18 @@ $(document).ready(function() {
 
 });
 
+function repair(restore) {
+	if (restore) {
+		$('#repair').val('restore');
+		$('#repair_button').html('Repair');
+	} else {
+		$('#repair').val('repair');
+		$('#repair_button').html('Restore');
+	}
+}
+
 function selectCountry(country) {
+		repair(true);
 	var dd = document.getElementById('country');
 	for (var i = 0; i < dd.options.length; i++) {
 		if (dd.options[i].text === country) {
@@ -482,13 +493,7 @@ function selectCountry(country) {
 }
 
 function repairClick() {
-	if ($('#repair').val() === 'repair') {
-		$('#repair').val('restore');
-		$('#repair_button').html('Repair');
-	} else {
-		$('#repair').val('repair');
-		$('#repair_button').html('Restore');
-	}
+	repair($('#repair').val() === 'repair');
 	updateGraphs();
 }
 
