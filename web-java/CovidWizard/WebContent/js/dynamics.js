@@ -456,6 +456,13 @@ $(document).ready(function() {
 
 	resetDate();
 
+	/* Set maximum prediction date */
+	var today = new Date();
+	var date = new Date();
+	date.setDate(date.getDate() + 14);
+	$("#date_prediction").attr("max", date.toISOString().split('T')[0]);
+	$("#date_prediction").attr("min", today.toISOString().split('T')[0]);
+
 	$('#open_table').click(function(event) {
 		event.preventDefault();
 
