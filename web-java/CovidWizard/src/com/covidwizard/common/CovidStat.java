@@ -238,7 +238,11 @@ public class CovidStat {
 			if (totalCases.containsKey(k - 1) && totalCases.containsKey(k - 11) && infectionRate.containsKey(k - 10)) {
 				double td = totalCases.get(k - 1);
 				double g = infectionRate.get(k - 10);
-				totalCases.put(k, td + g * (td - totalCases.get(k - 11)));
+				double totalCasesPrediction = td + g * (td - totalCases.get(k - 11));
+				if (totalCasesPrediction > population) {
+					totalCasesPrediction = population;	/* limit the total cases to the population */
+				}
+				totalCases.put(k, totalCasesPrediction);
 			}
 		}
 	}

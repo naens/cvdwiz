@@ -3,6 +3,7 @@ const variable_graph_prediction = 1;		// variable graph prediction
 const total_infection_rate_index = 2;
 const epidemic_threshold_index = 3;
 const total_infection_rate_1 = 4;
+const PREDICTION_LIMIT = 56;
 const info = 5;
 var pdata;
 var playout;
@@ -459,7 +460,7 @@ $(document).ready(function() {
 	/* Set maximum prediction date */
 	var today = new Date();
 	var date = new Date();
-	date.setDate(date.getDate() + 14);
+	date.setDate(date.getDate() + PREDICTION_LIMIT);
 	$("#date_prediction").attr("max", date.toISOString().split('T')[0]);
 	$("#date_prediction").attr("min", today.toISOString().split('T')[0]);
 
